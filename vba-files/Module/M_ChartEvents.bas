@@ -29,19 +29,19 @@ Public Sub ShowTaskDetails()
     End If
 
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
-    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, R1C2).End(xlUp).Row
+    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, 2).End(xlUp).Row
     taskFound = False
 
     ' Tasksシートから該当タスクの情報を検索
     For i = 2 To lastTaskRow
-        If wsTasks.Cells(R1C1, i).Value = taskID Then
-            msg = "タスクID: " & wsTasks.Cells(R1C1, i).Value & vbCrLf & _
-                  "タスク名: " & wsTasks.Cells(R1C2, i).Value & vbCrLf & _
-                  "期間: " & wsTasks.Cells(R1C3, i).Value & "日" & vbCrLf & _
-                  "開始日: " & Format(wsTasks.Cells(R1C4, i).Value, "yyyy/mm/dd") & vbCrLf & _
-                  "終了日: " & Format(wsTasks.Cells(R1C5, i).Value, "yyyy/mm/dd") & vbCrLf & _
-                  "進捗: " & Format(wsTasks.Cells(R1C6, i).Value, "0%") & vbCrLf & _
-                  "ステータス: " & wsTasks.Cells(R1C7, i).Value
+        If wsTasks.Cells(i, 1).Value = taskID Then
+            msg = "タスクID: " & wsTasks.Cells(i, 1).Value & vbCrLf & _
+                  "タスク名: " & wsTasks.Cells(i, 2).Value & vbCrLf & _
+                  "期間: " & wsTasks.Cells(i, 3).Value & "日" & vbCrLf & _
+                  "開始日: " & Format(wsTasks.Cells(i, 4).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "終了日: " & Format(wsTasks.Cells(i, 5).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "進捗: " & Format(wsTasks.Cells(i, 6).Value, "0%") & vbCrLf & _
+                  "ステータス: " & wsTasks.Cells(i, 7).Value
             taskFound = True
             Exit For
         End If
@@ -50,7 +50,7 @@ Public Sub ShowTaskDetails()
     If taskFound Then
         MsgBox msg, vbInformation, "タスク詳細"
     Else
-        MsgBox "タスク情報が見つかりませんでした。", vbExclamation"
+        MsgBox "タスク情報が見つかりませんでした。", vbExclamation
     End If
 
     Exit Sub
