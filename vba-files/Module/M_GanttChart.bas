@@ -34,38 +34,25 @@ Public Sub UpdateGanttChart()
     Dim chartStartRow As Long, chartStartCol As Long
     Dim barHeight As Double, rowHeight As Double, colWidth As Double
     Dim minDate As Date, maxDate As Date
-
-    '--- ループ内で使用する変数 ---
-    Dim taskID As Long
-    Dim taskName As String, status As String
-    Dim startDate As Date, endDate As Date
-    '--- 値を一時的に受け取るVariant型変数 ---
-    Dim vValue As Variant
-    Dim vTaskID As Variant, vStartDate As Variant, vEndDate As Variant
+    Dim taskID As Long, taskName As String, status As String, startDate As Date, endDate As Date
+    Dim vValue As Variant, vTaskID As Variant, vStartDate As Variant, vEndDate As Variant
     Dim vDuration As Variant, vProgress As Variant
 
     Application.ScreenUpdating = False
-
     Set wsGantt = ThisWorkbook.Sheets("GanttChart")
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
     Set wsSettings = ThisWorkbook.Sheets("Settings")
 
     Call ClearGanttChart(wsGantt)
 
-    '--- ★★★ 修正箇所: Settingsシートからの読み込みを強化 ★★★
-    ' 設定値を安全に読み込む
     vValue = wsSettings.Cells(SETTING_CHART_START_ROW, 2).Value
     If IsNumeric(vValue) Then chartStartRow = CLng(vValue) Else GoTo SettingsErr
-    
     vValue = wsSettings.Cells(SETTING_CHART_START_ROW, 3).Value
     If IsNumeric(vValue) Then chartStartCol = CLng(vValue) Else GoTo SettingsErr
-    
     vValue = wsSettings.Cells(SETTING_BAR_HEIGHT, 2).Value
     If IsNumeric(vValue) Then barHeight = CDbl(vValue) Else GoTo SettingsErr
-    
     vValue = wsSettings.Cells(SETTING_ROW_HEIGHT, 2).Value
     If IsNumeric(vValue) Then rowHeight = CDbl(vValue) Else GoTo SettingsErr
-
     vValue = wsSettings.Cells(SETTING_COL_WIDTH, 2).Value
     If IsNumeric(vValue) Then colWidth = CDbl(vValue) Else GoTo SettingsErr
 
@@ -75,7 +62,6 @@ Public Sub UpdateGanttChart()
         GoTo ExitHandler
     End If
 
-    ' --- 日付範囲の特定 (有効な日付のみを対象) ---
     minDate = Date + 36500
     maxDate = Date - 36500
     For i = 2 To lastTaskRow
@@ -94,7 +80,6 @@ Public Sub UpdateGanttChart()
 
     Call DrawTimeline(wsGantt, minDate, maxDate, chartStartRow, chartStartCol, colWidth)
 
-    ' 各タスクのバーを描画。チェックと型変換を徹底する。
     For i = 2 To lastTaskRow
         vTaskID = wsTasks.Cells(i, COL_TASK_ID).Value
         vStartDate = wsTasks.Cells(i, COL_START_DATE).Value
@@ -125,11 +110,9 @@ Public Sub UpdateGanttChart()
 ExitHandler:
     Application.ScreenUpdating = True
     Exit Sub
-
 SettingsErr:
     MsgBox "Settingsシートの設定値が不正です。" & vbCrLf & "数値が入力されるべきセルが空白または文字列になっていないか確認してください。", vbCritical, "設定エラー"
     GoTo ExitHandler
-
 ErrHandler:
     MsgBox "ガントチャートの更新中に予期せぬエラーが発生しました: " & Err.Description, vbCritical
     GoTo ExitHandler
@@ -139,9 +122,7 @@ Private Sub ClearGanttChart(wsGantt As Worksheet)
     On Error Resume Next
     Dim sh As Shape
     For Each sh In wsGantt.Shapes
-        If sh.Name <> "UpdateChartButton" Then
-            sh.Delete
-        End If
+        If sh.Name <> "UpdateChartButton" Then sh.Delete
     Next sh
     On Error GoTo 0
 End Sub
@@ -150,18 +131,13 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String
                         startDate As Date, endDate As Date, status As String, _
                         rowNum As Long, chartStartCol As Long, colWidth As Double, barHeight As Double, _
                         minChartDate As Date)
-    Dim barLeft As Double, barTop As Double, barWidth As Double
-    Dim barColor As Long
+    Dim barLeft As Double, barTop As Double, barWidth As Double, barColor As Long
     Dim sh As Shape
-
     barLeft = wsGantt.Cells(rowNum, chartStartCol).Left + (startDate - minChartDate) * colWidth
     barTop = wsGantt.Cells(rowNum, 1).Top + (wsGantt.Cells(rowNum, 1).Height - barHeight) / 2
     barWidth = (endDate - startDate + 1) * colWidth
-
     If barWidth <= 0 Then Exit Sub
-
     barColor = GetColorByStatus(status)
-
     Set sh = wsGantt.Shapes.AddShape(msoShapeRectangle, barLeft, barTop, barWidth, barHeight)
     With sh
         .Fill.ForeColor.RGB = barColor
@@ -179,15 +155,9 @@ End Sub
 
 Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Date, _
                          chartStartRow As Long, chartStartCol As Long, colWidth As Double)
-    If chartStartRow <= 1 Then
-        Err.Raise Number:=vbObjectError, Description:="チャートの開始行は2行目以降に設定してください。"
-    End If
-    
-    Dim currentDate As Date
-    Dim colOffset As Long
-    Dim headerRow As Long
+    If chartStartRow <= 1 Then Err.Raise vbObjectError, , "チャートの開始行は2行目以降に設定してください。"
+    Dim currentDate As Date, colOffset As Long, headerRow As Long
     headerRow = chartStartRow - 1
-
     colOffset = 0
     For currentDate = startDate To endDate
         With wsGantt.Cells(headerRow, chartStartCol + colOffset)
@@ -206,17 +176,13 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
                             chartStartRow As Long, lastTaskRow As Long, _
                             minChartDate As Date, maxChartDate As Date)
     On Error GoTo ErrHandler
-
-    Dim i As Long
-    Dim totalDuration As Double, completedDuration As Double
-    Dim progressPercentage As Double
-    Dim chartObj As ChartObject
-    Dim chartName As String
+    Dim i As Long, totalDuration As Double, completedDuration As Double, progressPercentage As Double
+    Dim chartObj As ChartObject, chartName As String
     chartName = "OverallProgressChart"
     
     On Error Resume Next
     wsGantt.ChartObjects(chartName).Delete
-    On Error GoTo 0
+    On Error GoTo 0 ' エラーハンドリングを元に戻す
 
     totalDuration = 0
     completedDuration = 0
@@ -227,12 +193,7 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
         End If
     Next i
 
-    If totalDuration > 0 Then
-        progressPercentage = completedDuration / totalDuration
-    Else
-        progressPercentage = 0
-    End If
-
+    If totalDuration > 0 Then progressPercentage = completedDuration / totalDuration Else progressPercentage = 0
     wsGantt.Range("A1").Value = progressPercentage
     wsGantt.Range("B1").Value = 1 - progressPercentage
 
@@ -249,11 +210,16 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
             .ChartTitle.Font.Size = 10
             .HasLegend = False
             .ChartGroups(1).DoughnutHoleSize = 60
+
+            '--- ★★★ 修正箇所 1: データラベルの適用方法を変更 ★★★
             With .SeriesCollection(1)
                 .Points(1).Interior.Color = RGB(0, 176, 80)
                 .Points(2).Interior.Color = RGB(220, 220, 220)
-                .ApplyDataLabels
-                With .DataLabels(1)
+                
+                ' 進捗部分(Points(1))にのみデータラベルを適用し、書式設定する
+                .Points(1).ApplyDataLabels
+                With .Points(1).DataLabel
+                    .ShowValue = True
                     .NumberFormat = "0%"
                     .Font.Size = 12
                     .Position = xlLabelPositionCenter
@@ -269,27 +235,32 @@ ErrHandler:
 End Sub
 
 Private Function GetColorByStatus(status As String) As Long
+    '--- ★★★ 修正箇所 2: 色の取得方法を .Interior.Color から .Value に変更 ★★★
     Dim wsSettings As Worksheet
     Set wsSettings = ThisWorkbook.Sheets("Settings")
     Const VALUE_COL As Long = 2
+    Dim vColor As Variant
+    Dim defaultColor As Long
+    defaultColor = RGB(192, 192, 192) ' デフォルト色 (灰色)
     
-    On Error Resume Next
     Select Case status
         Case "未着手"
-            GetColorByStatus = wsSettings.Cells(SETTING_COLOR_UNSTARTED, VALUE_COL).Interior.Color
+            vColor = wsSettings.Cells(SETTING_COLOR_UNSTARTED, VALUE_COL).Value
         Case "進行中"
-            GetColorByStatus = wsSettings.Cells(SETTING_COLOR_IN_PROGRESS, VALUE_COL).Interior.Color
+            vColor = wsSettings.Cells(SETTING_COLOR_IN_PROGRESS, VALUE_COL).Value
         Case "完了"
-            GetColorByStatus = wsSettings.Cells(SETTING_COLOR_COMPLETED, VALUE_COL).Interior.Color
+            vColor = wsSettings.Cells(SETTING_COLOR_COMPLETED, VALUE_COL).Value
         Case "遅延"
-            GetColorByStatus = wsSettings.Cells(SETTING_COLOR_DELAYED, VALUE_COL).Interior.Color
+            vColor = wsSettings.Cells(SETTING_COLOR_DELAYED, VALUE_COL).Value
         Case Else
-            GetColorByStatus = RGB(192, 192, 192)
+            GetColorByStatus = defaultColor
+            Exit Function
     End Select
     
-    If Err.Number <> 0 Then
-        GetColorByStatus = RGB(192, 192, 192)
-        Err.Clear
+    ' 値が数値なら色として返し、そうでなければデフォルト色を返す
+    If IsNumeric(vColor) Then
+        GetColorByStatus = CLng(vColor)
+    Else
+        GetColorByStatus = defaultColor
     End If
-    On Error GoTo 0
 End Function
