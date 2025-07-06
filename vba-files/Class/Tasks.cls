@@ -9,6 +9,3 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Option Explicit
 
-Private Sub CommandButton1_Click()
-    Call hello
-End Sub

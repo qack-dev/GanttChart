@@ -50,7 +50,7 @@ Public Sub ShowTaskDetails()
     If taskFound Then
         MsgBox msg, vbInformation, "タスク詳細"
     Else
-        MsgBox "タスク情報が見つかりませんでした。", vbExclamation
+        MsgBox "タスク情報が見つかりませんでした。", vbExclamation"
     End If
 
     Exit Sub

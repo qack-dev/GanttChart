@@ -48,7 +48,7 @@ Public Sub UpdateGanttChart()
     lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, R1C2).End(xlUp).Row
 
     If lastTaskRow < 2 Then ' ヘッダー行のみの場合
-        MsgBox "タスクデータがありません。", vbInformation
+        MsgBox "タスクデータがありません。", vbInformation"
         Exit Sub
     End If
 
@@ -252,7 +252,7 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
     End If
 
     ' グラフのデータ範囲を設定 (一時的にシートに書き出す)
-    wsGantt.Cells(R1C1, 1, 1).Value = "進捗"
+    wsGantt.Cells(R1C1, 1, 1).Value = "進捗""
     wsGantt.Cells(R1C1, 1, 2).Value = progressPercentage
 
     ' グラフの作成
@@ -294,11 +294,11 @@ Private Function GetColorByStatus(status As String) As Long
     Set wsSettings = ThisWorkbook.Sheets("Settings")
 
     Select Case status
-        Case "未着手"
+        Case "未着手""
             GetColorByStatus = wsSettings.Cells(R1C2, R1C7).Value ' 例: Settings!G2 に未着手の色
         Case "進行中"
             GetColorByStatus = wsSettings.Cells(R1C3, R1C7).Value ' 例: Settings!G3 に進行中の色
-        Case "完了"
+        Case "完了""
             GetColorByStatus = wsSettings.Cells(R1C4, R1C7).Value ' 例: Settings!G4 に完了の色
         Case "遅延"
             GetColorByStatus = wsSettings.Cells(R1C5, R1C7).Value ' 例: Settings!G5 に遅延の色
