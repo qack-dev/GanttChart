@@ -288,7 +288,7 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
             .ChartTitle.Text = "全体進捗率"
             .ChartTitle.Font.Size = 10
             .HasLegend = False
-            .DoughnutHoleSize = 60
+            .ChartGroups(1).DoughnutHoleSize = 60
 
             ' データ系列の設定
             With .SeriesCollection(1)

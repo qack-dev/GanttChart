@@ -1,11 +1,4 @@
 Attribute VB_Name = "Sheet_Tasks"
-Attribute VB_Base = "0{00020819-0000-0000-C000-000000000046}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = True
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = True
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,8 +18,10 @@ Private Const COL_STATUS As Long = 7
 Private Sub Worksheet_Change(ByVal Target As Range)
     On Error GoTo ErrHandler
 
+    Dim ws As Worksheet
     Dim dataRange As Range
-    Set dataRange = Me.Range(Me.Cells(1, COL_TASK_NAME), Me.Cells(Me.Rows.Count, COL_STATUS)) ' B列からG列までを監視対象とする
+    Set ws = ThisWorkbook.Worksheets("Tasks")
+    Set dataRange = ws.Range(ws.Cells(1, COL_TASK_NAME), ws.Cells(ws.Rows.Count, COL_STATUS)) ' B列からG列までを監視対象とする
 
     ' 変更されたセルが監視対象範囲内にあるか、かつ複数セルが変更されていないかを確認
     If Not Intersect(Target, dataRange) Is Nothing And Target.Cells.Count = 1 Then
@@ -34,12 +29,12 @@ Private Sub Worksheet_Change(ByVal Target As Range)
         If Target.Row >= 2 Then
             ' 終了日 (E列) が変更された場合は、期間 (C列) を再計算
             If Target.Column = COL_END_DATE Then ' E列 (終了日)
-                Me.Cells(Target.Row, COL_DURATION).Value = Me.Cells(Target.Row, COL_END_DATE).Value - Me.Cells(Target.Row, COL_START_DATE).Value + 1
+                ws.Cells(Target.Row, COL_DURATION).Value = ws.Cells(Target.Row, COL_END_DATE).Value - ws.Cells(Target.Row, COL_START_DATE).Value + 1
             End If
 
             ' 期間 (C列) または開始日 (D列) が変更された場合は、終了日 (E列) を再計算
             If Target.Column = COL_DURATION Or Target.Column = COL_START_DATE Then ' C列 (期間) または D列 (開始日)
-                Me.Cells(Target.Row, COL_END_DATE).Value = Me.Cells(Target.Row, COL_START_DATE).Value + Me.Cells(Target.Row, COL_DURATION).Value - 1
+                ws.Cells(Target.Row, COL_END_DATE).Value = ws.Cells(Target.Row, COL_START_DATE).Value + ws.Cells(Target.Row, COL_DURATION).Value - 1
             End If
 
             ' ガントチャートを更新
