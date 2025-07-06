@@ -278,7 +278,7 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
 
     ' グラフの作成
     Set chartObj = wsGantt.ChartObjects.Add(Left:=wsGantt.Cells(chartStartRow, chartStartCol).Left, _
-                                            Top:=wsGantt.Cells(chartStartRow, chartStartCol).Top + (maxChartDate - minChartDate + 2) * wsGantt.Cells(1, 1).Height, _
+                                            Top:=wsGantt.Cells(chartStartRow + lastTaskRow + 3, chartStartCol).Top, _
                                             Width:=300, Height:=150)
     With chartObj
         .Name = chartName
@@ -289,7 +289,7 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
             .ChartTitle.Text = "全体進捗率"
             .ChartTitle.Font.Size = 10
             .HasLegend = False
-            .ChartGroups(1).DoughnutHoleSize = 60 ' ここを修正
+            .ChartGroups(1).DoughnutHoleSize = 60
 
             ' データ系列の設定
             With .SeriesCollection(1)
