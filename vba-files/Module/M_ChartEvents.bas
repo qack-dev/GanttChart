@@ -6,6 +6,15 @@ Option Explicit
 '// ガントチャート上のタスクバー（Shapeオブジェクト）クリックイベントを処理します。
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
+' Tasksシートの列インデックス
+Private Const COL_TASK_ID As Long = 1
+Private Const COL_TASK_NAME As Long = 2
+Private Const COL_DURATION As Long = 3
+Private Const COL_START_DATE As Long = 4
+Private Const COL_END_DATE As Long = 5
+Private Const COL_PROGRESS As Long = 6
+Private Const COL_STATUS As Long = 7
+
 ' クリックされたタスクの詳細を表示する
 Public Sub ShowTaskDetails()
     On Error GoTo ErrHandler
@@ -29,19 +38,19 @@ Public Sub ShowTaskDetails()
     End If
 
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
-    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, 2).End(xlUp).Row
+    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, COL_TASK_NAME).End(xlUp).Row
     taskFound = False
 
     ' Tasksシートから該当タスクの情報を検索
     For i = 2 To lastTaskRow
-        If wsTasks.Cells(i, 1).Value = taskID Then
-            msg = "タスクID: " & wsTasks.Cells(i, 1).Value & vbCrLf & _
-                  "タスク名: " & wsTasks.Cells(i, 2).Value & vbCrLf & _
-                  "期間: " & wsTasks.Cells(i, 3).Value & "日" & vbCrLf & _
-                  "開始日: " & Format(wsTasks.Cells(i, 4).Value, "yyyy/mm/dd") & vbCrLf & _
-                  "終了日: " & Format(wsTasks.Cells(i, 5).Value, "yyyy/mm/dd") & vbCrLf & _
-                  "進捗: " & Format(wsTasks.Cells(i, 6).Value, "0%") & vbCrLf & _
-                  "ステータス: " & wsTasks.Cells(i, 7).Value
+        If wsTasks.Cells(i, COL_TASK_ID).Value = taskID Then
+            msg = "タスクID: " & wsTasks.Cells(i, COL_TASK_ID).Value & vbCrLf & _
+                  "タスク名: " & wsTasks.Cells(i, COL_TASK_NAME).Value & vbCrLf & _
+                  "期間: " & wsTasks.Cells(i, COL_DURATION).Value & "日" & vbCrLf & _
+                  "開始日: " & Format(wsTasks.Cells(i, COL_START_DATE).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "終了日: " & Format(wsTasks.Cells(i, COL_END_DATE).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "進捗: " & Format(wsTasks.Cells(i, COL_PROGRESS).Value, "0%") & vbCrLf & _
+                  "ステータス: " & wsTasks.Cells(i, COL_STATUS).Value
             taskFound = True
             Exit For
         End If

@@ -6,6 +6,26 @@ Option Explicit
 '// ガントチャートの描画、更新、全体進捗グラフの更新など、主要なロジックを格納します。
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
+' Tasksシートの列インデックス
+Private Const COL_TASK_ID As Long = 1
+Private Const COL_TASK_NAME As Long = 2
+Private Const COL_DURATION As Long = 3
+Private Const COL_START_DATE As Long = 4
+Private Const COL_END_DATE As Long = 5
+Private Const COL_PROGRESS As Long = 6
+Private Const COL_STATUS As Long = 7
+
+' Settingsシートのセル参照
+Private Const SETTING_CHART_START_ROW As Long = 1
+Private Const SETTING_CHART_START_COL As Long = 2
+Private Const SETTING_BAR_HEIGHT As Long = 3
+Private Const SETTING_ROW_HEIGHT As Long = 4
+Private Const SETTING_COL_WIDTH As Long = 5
+Private Const SETTING_COLOR_UNSTARTED As Long = 6
+Private Const SETTING_COLOR_IN_PROGRESS As Long = 7
+Private Const SETTING_COLOR_COMPLETED As Long = 8
+Private Const SETTING_COLOR_DELAYED As Long = 9
+
 ' ガントチャートを更新するメインプロシージャ
 Public Sub UpdateGanttChart()
     On Error GoTo ErrHandler
@@ -38,14 +58,14 @@ Public Sub UpdateGanttChart()
     Call ClearGanttChart(wsGantt)
 
     ' 設定値の読み込み
-    chartStartRow = wsSettings.Cells(1, 2).Value ' 例: Settings!B1 に開始行
-    chartStartCol = wsSettings.Cells(1, 3).Value ' 例: Settings!C1 に開始列
-    barHeight = wsSettings.Cells(1, 4).Value    ' 例: Settings!D1 にバーの高さ
-    rowHeight = wsSettings.Cells(1, 5).Value    ' 例: Settings!E1 に行の高さ
-    colWidth = wsSettings.Cells(1, 6).Value     ' 例: Settings!F1 に列の幅
+    chartStartRow = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_CHART_START_COL).Value ' 例: Settings!B1 に開始行
+    chartStartCol = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_CHART_START_COL + 1).Value ' 例: Settings!C1 に開始列
+    barHeight = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_BAR_HEIGHT + 1).Value    ' 例: Settings!D1 にバーの高さ
+    rowHeight = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_ROW_HEIGHT + 1).Value    ' 例: Settings!E1 に行の高さ
+    colWidth = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_COL_WIDTH + 1).Value     ' 例: Settings!F1 に列の幅
 
     ' タスクデータの最終行を取得 (TasksシートのB列を基準)
-    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, 2).End(xlUp).Row
+    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, COL_TASK_NAME).End(xlUp).Row
 
     If lastTaskRow < 2 Then ' ヘッダー行のみの場合
         MsgBox "タスクデータがありません。", vbInformation
@@ -53,12 +73,12 @@ Public Sub UpdateGanttChart()
     End If
 
     ' 日付範囲の特定
-    minDate = wsTasks.Cells(2, 4).Value ' 開始日のヘッダー
-    maxDate = wsTasks.Cells(2, 5).Value ' 終了日のヘッダー
+    minDate = wsTasks.Cells(2, COL_START_DATE).Value ' 開始日のヘッダー
+    maxDate = wsTasks.Cells(2, COL_END_DATE).Value ' 終了日のヘッダー
 
     For i = 2 To lastTaskRow
-        If wsTasks.Cells(i, 4).Value < minDate Then minDate = wsTasks.Cells(i, 4).Value
-        If wsTasks.Cells(i, 5).Value > maxDate Then maxDate = wsTasks.Cells(i, 5).Value
+        If wsTasks.Cells(i, COL_START_DATE).Value < minDate Then minDate = wsTasks.Cells(i, COL_START_DATE).Value
+        If wsTasks.Cells(i, COL_END_DATE).Value > maxDate Then maxDate = wsTasks.Cells(i, COL_END_DATE).Value
     Next i
 
     ' タイムラインの描画
@@ -66,13 +86,13 @@ Public Sub UpdateGanttChart()
 
     ' 各タスクのバーを描画
     For i = 2 To lastTaskRow
-        taskID = wsTasks.Cells(i, 1).Value
-        taskName = wsTasks.Cells(i, 2).Value
-        duration = wsTasks.Cells(i, 3).Value
-        startDate = wsTasks.Cells(i, 4).Value
-        endDate = wsTasks.Cells(i, 5).Value
-        progress = wsTasks.Cells(i, 6).Value
-        status = wsTasks.Cells(i, 7).Value
+        taskID = wsTasks.Cells(i, COL_TASK_ID).Value
+        taskName = wsTasks.Cells(i, COL_TASK_NAME).Value
+        duration = wsTasks.Cells(i, COL_DURATION).Value
+        startDate = wsTasks.Cells(i, COL_START_DATE).Value
+        endDate = wsTasks.Cells(i, COL_END_DATE).Value
+        progress = wsTasks.Cells(i, COL_PROGRESS).Value
+        status = wsTasks.Cells(i, COL_STATUS).Value
 
         ' タスクバーの描画
         Call DrawTaskBar(wsGantt, taskID, taskName, startDate, endDate, status, _
@@ -223,7 +243,7 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
         End If
     Next chartObj
 
-    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, 2).End(xlUp).Row
+    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, COL_TASK_NAME).End(xlUp).Row
     totalDuration = 0
     completedDuration = 0
 
@@ -232,9 +252,9 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
         Dim progress As Double
         Dim status As String
 
-        duration = wsTasks.Cells(i, 3).Value ' 期間
-        progress = wsTasks.Cells(i, 6).Value ' 進捗
-        status = wsTasks.Cells(i, 7).Value   ' ステータス
+        duration = wsTasks.Cells(i, COL_DURATION).Value ' 期間
+        progress = wsTasks.Cells(i, COL_PROGRESS).Value ' 進捗
+        status = wsTasks.Cells(i, COL_STATUS).Value   ' ステータス
 
         totalDuration = totalDuration + duration
 
@@ -295,13 +315,13 @@ Private Function GetColorByStatus(status As String) As Long
 
     Select Case status
         Case "未着手"
-            GetColorByStatus = wsSettings.Cells(2, 7).Value ' 例: Settings!G2 に未着手の色
+            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 1, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G2 に未着手の色
         Case "進行中"
-            GetColorByStatus = wsSettings.Cells(3, 7).Value ' 例: Settings!G3 に進行中の色
+            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 2, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G3 に進行中の色
         Case "完了"
-            GetColorByStatus = wsSettings.Cells(4, 7).Value ' 例: Settings!G4 に完了の色
+            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 3, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G4 に完了の色
         Case "遅延"
-            GetColorByStatus = wsSettings.Cells(5, 7).Value ' 例: Settings!G5 に遅延の色
+            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 4, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G5 に遅延の色
         Case Else
             GetColorByStatus = RGB(192, 192, 192) ' デフォルト色 (灰色)
     End Select
