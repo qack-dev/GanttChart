@@ -2,31 +2,31 @@ Attribute VB_Name = "Sheet_Tasks"
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
-'// Sheet_Tasks ã‚·ãƒ¼ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«
-'// ã€ŒTasksã€ã‚·ãƒ¼ãƒˆã®ã‚¤ãƒ™ãƒ³ãƒˆï¼ˆä¾‹: Worksheet_Changeï¼‰ã‚’å‡¦ç†ã—ã€ãƒ‡ãƒ¼ã‚¿å¤‰æ›´æ™‚ã«ã‚¬ãƒ³ãƒˆãƒãƒ£ãƒ¼ãƒˆã®æ›´æ–°ã‚’ãƒˆãƒªã‚¬ãƒ¼ã—ã¾ã™ã€‚
+'// Sheet_Tasks ƒV[ƒgƒ‚ƒWƒ…[ƒ‹
+'// uTasksvƒV[ƒg‚ÌƒCƒxƒ“ƒgi—á: Worksheet_Changej‚ğˆ—‚µAƒf[ƒ^•ÏX‚ÉƒKƒ“ƒgƒ`ƒƒ[ƒg‚ÌXV‚ğƒgƒŠƒK[‚µ‚Ü‚·B
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Private Sub Worksheet_Change(ByVal Target As Range)
     On Error GoTo ErrHandler
 
     Dim dataRange As Range
-    Set dataRange = Me.Range("B:G") ' Båˆ—ã‹ã‚‰Gåˆ—ã¾ã§ã‚’ç›£è¦–å¯¾è±¡ã¨ã™ã‚‹
+    Set dataRange = Me.Range("B:G") ' B—ñ‚©‚çG—ñ‚Ü‚Å‚ğŠÄ‹‘ÎÛ‚Æ‚·‚é
 
-    ' å¤‰æ›´ã•ã‚ŒãŸã‚»ãƒ«ãŒç›£è¦–å¯¾è±¡ç¯„å›²å†…ã«ã‚ã‚‹ã‹ã€ã‹ã¤è¤‡æ•°ã‚»ãƒ«ãŒå¤‰æ›´ã•ã‚Œã¦ã„ãªã„ã‹ã‚’ç¢ºèª
+    ' •ÏX‚³‚ê‚½ƒZƒ‹‚ªŠÄ‹‘ÎÛ”ÍˆÍ“à‚É‚ ‚é‚©A‚©‚Â•¡”ƒZƒ‹‚ª•ÏX‚³‚ê‚Ä‚¢‚È‚¢‚©‚ğŠm”F
     If Not Intersect(Target, dataRange) Is Nothing And Target.Cells.Count = 1 Then
-        ' å¤‰æ›´ã•ã‚ŒãŸè¡ŒãŒãƒ‡ãƒ¼ã‚¿è¡Œï¼ˆãƒ˜ãƒƒãƒ€ãƒ¼è¡Œä»¥å¤–ï¼‰ã§ã‚ã‚‹ã‹ã‚’ç¢ºèª
+        ' •ÏX‚³‚ê‚½s‚ªƒf[ƒ^siƒwƒbƒ_[sˆÈŠOj‚Å‚ ‚é‚©‚ğŠm”F
         If Target.Row >= 2 Then
-            ' çµ‚äº†æ—¥ (Eåˆ—) ãŒå¤‰æ›´ã•ã‚ŒãŸå ´åˆã¯ã€æœŸé–“ (Cåˆ—) ã‚’å†è¨ˆç®—
-            If Target.Column = 5 Then ' Eåˆ— (çµ‚äº†æ—¥)
+            ' I—¹“ú (E—ñ) ‚ª•ÏX‚³‚ê‚½ê‡‚ÍAŠúŠÔ (C—ñ) ‚ğÄŒvZ
+            If Target.Column = 5 Then ' E—ñ (I—¹“ú)
                 Me.Cells(Target.Row, R1C3).Value = Me.Cells(Target.Row, R1C5).Value - Me.Cells(Target.Row, R1C4).Value + 1
             End If
 
-            ' æœŸé–“ (Cåˆ—) ã¾ãŸã¯é–‹å§‹æ—¥ (Dåˆ—) ãŒå¤‰æ›´ã•ã‚ŒãŸå ´åˆã¯ã€çµ‚äº†æ—¥ (Eåˆ—) ã‚’å†è¨ˆç®—
-            If Target.Column = 3 Or Target.Column = 4 Then ' Cåˆ— (æœŸé–“) ã¾ãŸã¯ Dåˆ— (é–‹å§‹æ—¥)
+            ' ŠúŠÔ (C—ñ) ‚Ü‚½‚ÍŠJn“ú (D—ñ) ‚ª•ÏX‚³‚ê‚½ê‡‚ÍAI—¹“ú (E—ñ) ‚ğÄŒvZ
+            If Target.Column = 3 Or Target.Column = 4 Then ' C—ñ (ŠúŠÔ) ‚Ü‚½‚Í D—ñ (ŠJn“ú)
                 Me.Cells(Target.Row, R1C5).Value = Me.Cells(Target.Row, R1C4).Value + Me.Cells(Target.Row, R1C3).Value - 1
             End If
 
-            ' ã‚¬ãƒ³ãƒˆãƒãƒ£ãƒ¼ãƒˆã‚’æ›´æ–°
+            ' ƒKƒ“ƒgƒ`ƒƒ[ƒg‚ğXV
             Call M_GanttChart.UpdateGanttChart
         End If
     End If
@@ -34,5 +34,5 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     Exit Sub
 
 ErrHandler:
-    MsgBox "Tasksã‚·ãƒ¼ãƒˆã®å¤‰æ›´ã‚¤ãƒ™ãƒ³ãƒˆä¸­ã«ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ: " & Err.Description, vbCritical
+    MsgBox "TasksƒV[ƒg‚Ì•ÏXƒCƒxƒ“ƒg’†‚ÉƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½: " & Err.Description, vbCritical
 End Sub

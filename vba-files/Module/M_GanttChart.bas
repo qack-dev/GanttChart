@@ -2,11 +2,11 @@ Attribute VB_Name = "M_GanttChart"
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
-'// M_GanttChart ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«
-'// ã‚¬ãƒ³ãƒˆãƒãƒ£ãƒ¼ãƒˆã®æç”»ã€æ›´æ–°ã€å…¨ä½“é€²æ—ã‚°ãƒ©ãƒ•ã®æ›´æ–°ãªã©ã€ä¸»è¦ãªãƒ­ã‚¸ãƒƒã‚¯ã‚’æ ¼ç´ã—ã¾ã™ã€‚
+'// M_GanttChart ƒ‚ƒWƒ…[ƒ‹
+'// ƒKƒ“ƒgƒ`ƒƒ[ƒg‚Ì•`‰æAXVA‘S‘Ìi’»ƒOƒ‰ƒt‚ÌXV‚È‚ÇAå—v‚ÈƒƒWƒbƒN‚ğŠi”[‚µ‚Ü‚·B
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
-' ã‚¬ãƒ³ãƒˆãƒãƒ£ãƒ¼ãƒˆã‚’æ›´æ–°ã™ã‚‹ãƒ¡ã‚¤ãƒ³ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
+' ƒKƒ“ƒgƒ`ƒƒ[ƒg‚ğXV‚·‚éƒƒCƒ“ƒvƒƒV[ƒWƒƒ
 Public Sub UpdateGanttChart()
     On Error GoTo ErrHandler
 
@@ -34,37 +34,37 @@ Public Sub UpdateGanttChart()
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
     Set wsSettings = ThisWorkbook.Sheets("Settings")
 
-    ' æ—¢å­˜ã®ãƒãƒ£ãƒ¼ãƒˆã‚’ã‚¯ãƒªã‚¢
+    ' Šù‘¶‚Ìƒ`ƒƒ[ƒg‚ğƒNƒŠƒA
     Call ClearGanttChart(wsGantt)
 
-    ' è¨­å®šå€¤ã®èª­ã¿è¾¼ã¿
-    chartStartRow = wsSettings.Cells(R1C2, R1C2).Value ' ä¾‹: Settings!B1 ã«é–‹å§‹è¡Œ
-    chartStartCol = wsSettings.Cells(R1C3, R1C3).Value ' ä¾‹: Settings!C1 ã«é–‹å§‹åˆ—
-    barHeight = wsSettings.Cells(R1C4, R1C4).Value    ' ä¾‹: Settings!D1 ã«ãƒãƒ¼ã®é«˜ã•
-    rowHeight = wsSettings.Cells(R1C5, R1C5).Value    ' ä¾‹: Settings!E1 ã«è¡Œã®é«˜ã•
-    colWidth = wsSettings.Cells(R1C6, R1C6).Value     ' ä¾‹: Settings!F1 ã«åˆ—ã®å¹…
+    ' İ’è’l‚Ì“Ç‚İ‚İ
+    chartStartRow = wsSettings.Cells(R1C2, R1C2).Value ' —á: Settings!B1 ‚ÉŠJns
+    chartStartCol = wsSettings.Cells(R1C3, R1C3).Value ' —á: Settings!C1 ‚ÉŠJn—ñ
+    barHeight = wsSettings.Cells(R1C4, R1C4).Value    ' —á: Settings!D1 ‚Éƒo[‚Ì‚‚³
+    rowHeight = wsSettings.Cells(R1C5, R1C5).Value    ' —á: Settings!E1 ‚És‚Ì‚‚³
+    colWidth = wsSettings.Cells(R1C6, R1C6).Value     ' —á: Settings!F1 ‚É—ñ‚Ì•
 
-    ' ã‚¿ã‚¹ã‚¯ãƒ‡ãƒ¼ã‚¿ã®æœ€çµ‚è¡Œã‚’å–å¾— (Tasksã‚·ãƒ¼ãƒˆã®Båˆ—ã‚’åŸºæº–)
+    ' ƒ^ƒXƒNƒf[ƒ^‚ÌÅIs‚ğæ“¾ (TasksƒV[ƒg‚ÌB—ñ‚ğŠî€)
     lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, R1C2).End(xlUp).Row
 
-    If lastTaskRow < 2 Then ' ãƒ˜ãƒƒãƒ€ãƒ¼è¡Œã®ã¿ã®å ´åˆ
-        MsgBox "ã‚¿ã‚¹ã‚¯ãƒ‡ãƒ¼ã‚¿ãŒã‚ã‚Šã¾ã›ã‚“ã€‚", vbInformation"
+    If lastTaskRow < 2 Then ' ƒwƒbƒ_[s‚Ì‚İ‚Ìê‡
+        MsgBox "ƒ^ƒXƒNƒf[ƒ^‚ª‚ ‚è‚Ü‚¹‚ñB", vbInformation"
         Exit Sub
     End If
 
-    ' æ—¥ä»˜ç¯„å›²ã®ç‰¹å®š
-    minDate = wsTasks.Cells(R1C4, R1C4).Value ' é–‹å§‹æ—¥ã®ãƒ˜ãƒƒãƒ€ãƒ¼
-    maxDate = wsTasks.Cells(R1C5, R1C5).Value ' çµ‚äº†æ—¥ã®ãƒ˜ãƒƒãƒ€ãƒ¼
+    ' “ú•t”ÍˆÍ‚Ì“Á’è
+    minDate = wsTasks.Cells(R1C4, R1C4).Value ' ŠJn“ú‚Ìƒwƒbƒ_[
+    maxDate = wsTasks.Cells(R1C5, R1C5).Value ' I—¹“ú‚Ìƒwƒbƒ_[
 
     For i = 2 To lastTaskRow
         If wsTasks.Cells(R1C4, i).Value < minDate Then minDate = wsTasks.Cells(R1C4, i).Value
         If wsTasks.Cells(R1C5, i).Value > maxDate Then maxDate = wsTasks.Cells(R1C5, i).Value
     Next i
 
-    ' ã‚¿ã‚¤ãƒ ãƒ©ã‚¤ãƒ³ã®æç”»
+    ' ƒ^ƒCƒ€ƒ‰ƒCƒ“‚Ì•`‰æ
     Call DrawTimeline(wsGantt, minDate, maxDate, chartStartRow, chartStartCol, colWidth)
 
-    ' å„ã‚¿ã‚¹ã‚¯ã®ãƒãƒ¼ã‚’æç”»
+    ' Šeƒ^ƒXƒN‚Ìƒo[‚ğ•`‰æ
     For i = 2 To lastTaskRow
         taskID = wsTasks.Cells(R1C1, i).Value
         taskName = wsTasks.Cells(R1C2, i).Value
@@ -74,23 +74,23 @@ Public Sub UpdateGanttChart()
         progress = wsTasks.Cells(R1C6, i).Value
         status = wsTasks.Cells(R1C7, i).Value
 
-        ' ã‚¿ã‚¹ã‚¯ãƒãƒ¼ã®æç”»
+        ' ƒ^ƒXƒNƒo[‚Ì•`‰æ
         Call DrawTaskBar(wsGantt, taskID, taskName, startDate, endDate, status, _
                          chartStartRow + i - 1, chartStartCol, colWidth, barHeight, minDate)
     Next i
 
-    ' å…¨ä½“é€²æ—ã‚°ãƒ©ãƒ•ã®æ›´æ–°
+    ' ‘S‘Ìi’»ƒOƒ‰ƒt‚ÌXV
     Call UpdateLoadGraph(wsGantt, wsTasks, chartStartRow, chartStartCol, colWidth, minDate, maxDate)
 
     Exit Sub
 
 ErrHandler:
-    MsgBox "ã‚¬ãƒ³ãƒˆãƒãƒ£ãƒ¼ãƒˆã®æ›´æ–°ä¸­ã«ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ: " & Err.Description, vbCritical
+    MsgBox "ƒKƒ“ƒgƒ`ƒƒ[ƒg‚ÌXV’†‚ÉƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½: " & Err.Description, vbCritical
 End Sub
 
-' æ—¢å­˜ã®ã‚¬ãƒ³ãƒˆãƒãƒ£ãƒ¼ãƒˆã‚’ã‚¯ãƒªã‚¢ã™ã‚‹
+' Šù‘¶‚ÌƒKƒ“ƒgƒ`ƒƒ[ƒg‚ğƒNƒŠƒA‚·‚é
 Private Sub ClearGanttChart(wsGantt As Worksheet)
-    On Error Resume Next ' ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¦ã‚‚å‡¦ç†ã‚’ç¶šè¡Œ
+    On Error Resume Next ' ƒGƒ‰[‚ª”­¶‚µ‚Ä‚àˆ—‚ğ‘±s
 
     Dim sh As Shape
     For Each sh In wsGantt.Shapes
@@ -99,17 +99,17 @@ Private Sub ClearGanttChart(wsGantt As Worksheet)
         End If
     Next sh
 
-    ' ã‚°ãƒ©ãƒ•ã‚‚ã‚¯ãƒªã‚¢ (ã‚‚ã—ã‚ã‚Œã°)
+    ' ƒOƒ‰ƒt‚àƒNƒŠƒA (‚à‚µ‚ ‚ê‚Î)
     For Each sh In wsGantt.Shapes
         If sh.Type = msoChart Then
             sh.Delete
         End If
     Next sh
 
-    On Error GoTo 0 ' ã‚¨ãƒ©ãƒ¼ãƒãƒ³ãƒ‰ãƒªãƒ³ã‚°ã‚’ãƒªã‚»ãƒƒãƒˆ
+    On Error GoTo 0 ' ƒGƒ‰[ƒnƒ“ƒhƒŠƒ“ƒO‚ğƒŠƒZƒbƒg
 End Sub
 
-' 1ã¤ã®ã‚¿ã‚¹ã‚¯ã«å¯¾å¿œã™ã‚‹ãƒãƒ¼ã‚’æç”»ã™ã‚‹
+' 1‚Â‚Ìƒ^ƒXƒN‚É‘Î‰‚·‚éƒo[‚ğ•`‰æ‚·‚é
 Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String, _
                         startDate As Date, endDate As Date, status As String, _
                         rowNum As Long, chartStartCol As Long, colWidth As Long, barHeight As Long, _
@@ -122,25 +122,25 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String
     Dim barColor As Long
     Dim sh As Shape
 
-    ' ãƒãƒ¼ã®é–‹å§‹ä½ç½®ã¨å¹…ã‚’è¨ˆç®—
+    ' ƒo[‚ÌŠJnˆÊ’u‚Æ•‚ğŒvZ
     barLeft = wsGantt.Cells(R1C1, rowNum).Left + (startDate - minChartDate) * colWidth
     barTop = wsGantt.Cells(R1C1, rowNum).Top + (wsGantt.Cells(R1C1, rowNum).Height - barHeight) / 2
     barWidth = (endDate - startDate + 1) * colWidth
 
-    ' ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã«å¿œã˜ãŸè‰²ã‚’å–å¾—
+    ' ƒXƒe[ƒ^ƒX‚É‰‚¶‚½F‚ğæ“¾
     barColor = GetColorByStatus(status)
 
-    ' ãƒãƒ¼ã‚’æç”»
+    ' ƒo[‚ğ•`‰æ
     Set sh = wsGantt.Shapes.AddShape(msoShapeRectangle, barLeft, barTop, barWidth, barHeight)
     With sh
         .Fill.ForeColor.RGB = barColor
         .Line.Visible = msoFalse
-        .Name = "TaskBar_" & taskID ' ã‚¿ã‚¹ã‚¯IDã‚’åå‰ã«å«ã‚ã‚‹
-        .OnAction = "M_ChartEvents.ShowTaskDetails" ' ã‚¯ãƒªãƒƒã‚¯ã‚¤ãƒ™ãƒ³ãƒˆã®ãƒã‚¯ãƒ­ã‚’å‰²ã‚Šå½“ã¦
+        .Name = "TaskBar_" & taskID ' ƒ^ƒXƒNID‚ğ–¼‘O‚ÉŠÜ‚ß‚é
+        .OnAction = "M_ChartEvents.ShowTaskDetails" ' ƒNƒŠƒbƒNƒCƒxƒ“ƒg‚Ìƒ}ƒNƒ‚ğŠ„‚è“–‚Ä
         .TextFrame2.TextRange.Text = taskName
         With .TextFrame2.TextRange.Font.Fill
             .Visible = msoTrue
-            .ForeColor.RGB = RGB(0, 0, 0) ' ãƒ†ã‚­ã‚¹ãƒˆè‰²ã‚’é»’ã«è¨­å®š
+            .ForeColor.RGB = RGB(0, 0, 0) ' ƒeƒLƒXƒgF‚ğ•‚Éİ’è
             .Transparency = 0
             .Solid
         End With
@@ -154,10 +154,10 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String
     Exit Sub
 
 ErrHandler:
-    MsgBox "ã‚¿ã‚¹ã‚¯ãƒãƒ¼ã®æç”»ä¸­ã«ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ: " & Err.Description, vbCritical
+    MsgBox "ƒ^ƒXƒNƒo[‚Ì•`‰æ’†‚ÉƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½: " & Err.Description, vbCritical
 End Sub
 
-' ã‚¿ã‚¤ãƒ ãƒ©ã‚¤ãƒ³ã‚’æç”»ã™ã‚‹
+' ƒ^ƒCƒ€ƒ‰ƒCƒ“‚ğ•`‰æ‚·‚é
 Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Date, _
                          chartStartRow As Long, chartStartCol As Long, colWidth As Long)
     On Error GoTo ErrHandler
@@ -166,23 +166,23 @@ Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Dat
     Dim colOffset As Long
     Dim headerRow As Long
 
-    headerRow = chartStartRow - 1 ' ã‚¿ã‚¤ãƒ ãƒ©ã‚¤ãƒ³ã®ãƒ˜ãƒƒãƒ€ãƒ¼è¡Œ
+    headerRow = chartStartRow - 1 ' ƒ^ƒCƒ€ƒ‰ƒCƒ“‚Ìƒwƒbƒ_[s
 
-    ' æ—¥ä»˜ãƒ˜ãƒƒãƒ€ãƒ¼ã®ã‚¯ãƒªã‚¢
+    ' “ú•tƒwƒbƒ_[‚ÌƒNƒŠƒA
     wsGantt.Range(wsGantt.Cells(R1C1, headerRow, chartStartCol), wsGantt.Cells(R1C1, headerRow, chartStartCol + (endDate - startDate + 1))).ClearContents
 
     colOffset = 0
     For currentDate = startDate To endDate
         wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).Value = Format(currentDate, "m/d")
-        wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).ColumnWidth = colWidth / 6 ' æ—¥ä»˜è¡¨ç¤ºã«åˆã‚ã›ã¦èª¿æ•´
+        wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).ColumnWidth = colWidth / 6 ' “ú•t•\¦‚É‡‚í‚¹‚Ä’²®
         wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).HorizontalAlignment = xlCenter
         wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).VerticalAlignment = xlCenter
-        wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).Orientation = 90 ' ç¸¦æ›¸ã
+        wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).Orientation = 90 ' c‘‚«
 
-        ' é€±æœ«ã®èƒŒæ™¯è‰²ã‚’å¤‰æ›´
+        ' T––‚Ì”wŒiF‚ğ•ÏX
         If Weekday(currentDate, vbSaturday) = vbSaturday Or Weekday(currentDate, vbSaturday) = vbSunday Then
             With wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).Interior
-                .Color = RGB(220, 220, 220) ' è–„ã„ç°è‰²
+                .Color = RGB(220, 220, 220) ' ”–‚¢ŠDF
             End With
         Else
             With wsGantt.Cells(R1C1, headerRow, chartStartCol + colOffset).Interior
@@ -196,10 +196,10 @@ Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Dat
     Exit Sub
 
 ErrHandler:
-    MsgBox "ã‚¿ã‚¤ãƒ ãƒ©ã‚¤ãƒ³ã®æç”»ä¸­ã«ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ: " & Err.Description, vbCritical
+    MsgBox "ƒ^ƒCƒ€ƒ‰ƒCƒ“‚Ì•`‰æ’†‚ÉƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½: " & Err.Description, vbCritical
 End Sub
 
-' å…¨ä½“é€²æ—ã‚°ãƒ©ãƒ•ã‚’æ›´æ–°ã™ã‚‹
+' ‘S‘Ìi’»ƒOƒ‰ƒt‚ğXV‚·‚é
 Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
                             chartStartRow As Long, chartStartCol As Long, colWidth As Long, _
                             minChartDate As Date, maxChartDate As Date)
@@ -215,7 +215,7 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
 
     chartName = "OverallProgressChart"
 
-    ' æ—¢å­˜ã®ã‚°ãƒ©ãƒ•ã‚’å‰Šé™¤
+    ' Šù‘¶‚ÌƒOƒ‰ƒt‚ğíœ
     For Each chartObj In wsGantt.ChartObjects
         If chartObj.Name = chartName Then
             chartObj.Delete
@@ -232,13 +232,13 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
         Dim progress As Double
         Dim status As String
 
-        duration = wsTasks.Cells(R1C3, i).Value ' æœŸé–“
-        progress = wsTasks.Cells(R1C6, i).Value ' é€²æ—
-        status = wsTasks.Cells(R1C7, i).Value   ' ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+        duration = wsTasks.Cells(R1C3, i).Value ' ŠúŠÔ
+        progress = wsTasks.Cells(R1C6, i).Value ' i’»
+        status = wsTasks.Cells(R1C7, i).Value   ' ƒXƒe[ƒ^ƒX
 
         totalDuration = totalDuration + duration
 
-        If status = "å®Œäº†" Then
+        If status = "Š®—¹" Then
             completedDuration = completedDuration + duration
         Else
             completedDuration = completedDuration + (duration * progress)
@@ -251,11 +251,11 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
         progressPercentage = 0
     End If
 
-    ' ã‚°ãƒ©ãƒ•ã®ãƒ‡ãƒ¼ã‚¿ç¯„å›²ã‚’è¨­å®š (ä¸€æ™‚çš„ã«ã‚·ãƒ¼ãƒˆã«æ›¸ãå‡ºã™)
-    wsGantt.Cells(R1C1, 1, 1).Value = "é€²æ—""
+    ' ƒOƒ‰ƒt‚Ìƒf[ƒ^”ÍˆÍ‚ğİ’è (ˆê“I‚ÉƒV[ƒg‚É‘‚«o‚·)
+    wsGantt.Cells(R1C1, 1, 1).Value = "i’»""
     wsGantt.Cells(R1C1, 1, 2).Value = progressPercentage
 
-    ' ã‚°ãƒ©ãƒ•ã®ä½œæˆ
+    ' ƒOƒ‰ƒt‚Ìì¬
     Set chartObj = wsGantt.ChartObjects.Add(Left:=wsGantt.Cells(R1C1, chartStartRow, chartStartCol).Left, _
                                             Top:=wsGantt.Cells(R1C1, chartStartRow, chartStartCol).Top + (maxChartDate - minChartDate + 2) * wsGantt.Cells(R1C1, 1, 1).Height, _
                                             Width:=300, Height:=150)
@@ -265,15 +265,15 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
             .ChartType = xlDoughnut
             .SetSourceData Source:=wsGantt.Range(wsGantt.Cells(R1C1, 1, 1), wsGantt.Cells(R1C1, 1, 2))
             .HasTitle = True
-            .ChartTitle.Text = "å…¨ä½“é€²æ—ç‡"
+            .ChartTitle.Text = "‘S‘Ìi’»—¦"
             .ChartTitle.Font.Size = 10
             .HasLegend = False
             .DoughnutHoleSize = 60
 
-            ' ãƒ‡ãƒ¼ã‚¿ç³»åˆ—ã®è¨­å®š
+            ' ƒf[ƒ^Œn—ñ‚Ìİ’è
             With .SeriesCollection(1)
-                .Points(1).Interior.Color = RGB(0, 176, 80) ' å®Œäº†éƒ¨åˆ† (ç·‘)
-                .Points(2).Interior.Color = RGB(200, 200, 200) ' æœªå®Œäº†éƒ¨åˆ† (ç°è‰²)
+                .Points(1).Interior.Color = RGB(0, 176, 80) ' Š®—¹•”•ª (—Î)
+                .Points(2).Interior.Color = RGB(200, 200, 200) ' –¢Š®—¹•”•ª (ŠDF)
                 .ApplyDataLabels
                 .DataLabels.ShowPercentage = True
                 .DataLabels.Font.Size = 10
@@ -285,24 +285,24 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
     Exit Sub
 
 ErrHandler:
-    MsgBox "å…¨ä½“é€²æ—ã‚°ãƒ©ãƒ•ã®æ›´æ–°ä¸­ã«ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ: " & Err.Description, vbCritical
+    MsgBox "‘S‘Ìi’»ƒOƒ‰ƒt‚ÌXV’†‚ÉƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½: " & Err.Description, vbCritical
 End Sub
 
-' ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã«å¿œã˜ãŸè‰²ã‚’è¿”ã™é–¢æ•°
+' ƒXƒe[ƒ^ƒX‚É‰‚¶‚½F‚ğ•Ô‚·ŠÖ”
 Private Function GetColorByStatus(status As String) As Long
     Dim wsSettings As Worksheet
     Set wsSettings = ThisWorkbook.Sheets("Settings")
 
     Select Case status
-        Case "æœªç€æ‰‹""
-            GetColorByStatus = wsSettings.Cells(R1C2, R1C7).Value ' ä¾‹: Settings!G2 ã«æœªç€æ‰‹ã®è‰²
-        Case "é€²è¡Œä¸­"
-            GetColorByStatus = wsSettings.Cells(R1C3, R1C7).Value ' ä¾‹: Settings!G3 ã«é€²è¡Œä¸­ã®è‰²
-        Case "å®Œäº†""
-            GetColorByStatus = wsSettings.Cells(R1C4, R1C7).Value ' ä¾‹: Settings!G4 ã«å®Œäº†ã®è‰²
-        Case "é…å»¶"
-            GetColorByStatus = wsSettings.Cells(R1C5, R1C7).Value ' ä¾‹: Settings!G5 ã«é…å»¶ã®è‰²
+        Case "–¢’…è""
+            GetColorByStatus = wsSettings.Cells(R1C2, R1C7).Value ' —á: Settings!G2 ‚É–¢’…è‚ÌF
+        Case "is’†"
+            GetColorByStatus = wsSettings.Cells(R1C3, R1C7).Value ' —á: Settings!G3 ‚Éis’†‚ÌF
+        Case "Š®—¹""
+            GetColorByStatus = wsSettings.Cells(R1C4, R1C7).Value ' —á: Settings!G4 ‚ÉŠ®—¹‚ÌF
+        Case "’x‰„"
+            GetColorByStatus = wsSettings.Cells(R1C5, R1C7).Value ' —á: Settings!G5 ‚É’x‰„‚ÌF
         Case Else
-            GetColorByStatus = RGB(192, 192, 192) ' ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆè‰² (ç°è‰²)
+            GetColorByStatus = RGB(192, 192, 192) ' ƒfƒtƒHƒ‹ƒgF (ŠDF)
     End Select
 End Function

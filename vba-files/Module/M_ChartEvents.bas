@@ -2,11 +2,11 @@ Attribute VB_Name = "M_ChartEvents"
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
-'// M_ChartEvents ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«
-'// ã‚¬ãƒ³ãƒˆãƒãƒ£ãƒ¼ãƒˆä¸Šã®ã‚¿ã‚¹ã‚¯ãƒãƒ¼ï¼ˆShapeã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆï¼‰ã‚¯ãƒªãƒƒã‚¯ã‚¤ãƒ™ãƒ³ãƒˆã‚’å‡¦ç†ã—ã¾ã™ã€‚
+'// M_ChartEvents ƒ‚ƒWƒ…[ƒ‹
+'// ƒKƒ“ƒgƒ`ƒƒ[ƒgã‚Ìƒ^ƒXƒNƒo[iShapeƒIƒuƒWƒFƒNƒgjƒNƒŠƒbƒNƒCƒxƒ“ƒg‚ğˆ—‚µ‚Ü‚·B
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
-' ã‚¯ãƒªãƒƒã‚¯ã•ã‚ŒãŸã‚¿ã‚¹ã‚¯ã®è©³ç´°ã‚’è¡¨ç¤ºã™ã‚‹
+' ƒNƒŠƒbƒN‚³‚ê‚½ƒ^ƒXƒN‚ÌÚ×‚ğ•\¦‚·‚é
 Public Sub ShowTaskDetails()
     On Error GoTo ErrHandler
 
@@ -18,43 +18,43 @@ Public Sub ShowTaskDetails()
     Dim taskFound As Boolean
     Dim msg As String
 
-    ' ã‚¯ãƒªãƒƒã‚¯ã•ã‚ŒãŸShapeã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å–å¾—
+    ' ƒNƒŠƒbƒN‚³‚ê‚½ShapeƒIƒuƒWƒFƒNƒg‚ğæ“¾
     Set clickedShape = ActiveSheet.Shapes(Application.Caller)
 
-    ' Shapeã®åå‰ã‹ã‚‰ã‚¿ã‚¹ã‚¯IDã‚’æŠ½å‡º
+    ' Shape‚Ì–¼‘O‚©‚çƒ^ƒXƒNID‚ğ’Šo
     If Left(clickedShape.Name, 8) = "TaskBar_" Then
         taskID = CLng(Mid(clickedShape.Name, 9))
     Else
-        Exit Sub ' ã‚¿ã‚¹ã‚¯ãƒãƒ¼ä»¥å¤–ã®ShapeãŒã‚¯ãƒªãƒƒã‚¯ã•ã‚ŒãŸå ´åˆã¯ä½•ã‚‚ã—ãªã„
+        Exit Sub ' ƒ^ƒXƒNƒo[ˆÈŠO‚ÌShape‚ªƒNƒŠƒbƒN‚³‚ê‚½ê‡‚Í‰½‚à‚µ‚È‚¢
     End If
 
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
     lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, R1C2).End(xlUp).Row
     taskFound = False
 
-    ' Tasksã‚·ãƒ¼ãƒˆã‹ã‚‰è©²å½“ã‚¿ã‚¹ã‚¯ã®æƒ…å ±ã‚’æ¤œç´¢
+    ' TasksƒV[ƒg‚©‚çŠY“–ƒ^ƒXƒN‚Ìî•ñ‚ğŒŸõ
     For i = 2 To lastTaskRow
         If wsTasks.Cells(R1C1, i).Value = taskID Then
-            msg = "ã‚¿ã‚¹ã‚¯ID: " & wsTasks.Cells(R1C1, i).Value & vbCrLf & _
-                  "ã‚¿ã‚¹ã‚¯å: " & wsTasks.Cells(R1C2, i).Value & vbCrLf & _
-                  "æœŸé–“: " & wsTasks.Cells(R1C3, i).Value & "æ—¥" & vbCrLf & _
-                  "é–‹å§‹æ—¥: " & Format(wsTasks.Cells(R1C4, i).Value, "yyyy/mm/dd") & vbCrLf & _
-                  "çµ‚äº†æ—¥: " & Format(wsTasks.Cells(R1C5, i).Value, "yyyy/mm/dd") & vbCrLf & _
-                  "é€²æ—: " & Format(wsTasks.Cells(R1C6, i).Value, "0%") & vbCrLf & _
-                  "ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹: " & wsTasks.Cells(R1C7, i).Value
+            msg = "ƒ^ƒXƒNID: " & wsTasks.Cells(R1C1, i).Value & vbCrLf & _
+                  "ƒ^ƒXƒN–¼: " & wsTasks.Cells(R1C2, i).Value & vbCrLf & _
+                  "ŠúŠÔ: " & wsTasks.Cells(R1C3, i).Value & "“ú" & vbCrLf & _
+                  "ŠJn“ú: " & Format(wsTasks.Cells(R1C4, i).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "I—¹“ú: " & Format(wsTasks.Cells(R1C5, i).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "i’»: " & Format(wsTasks.Cells(R1C6, i).Value, "0%") & vbCrLf & _
+                  "ƒXƒe[ƒ^ƒX: " & wsTasks.Cells(R1C7, i).Value
             taskFound = True
             Exit For
         End If
     Next i
 
     If taskFound Then
-        MsgBox msg, vbInformation, "ã‚¿ã‚¹ã‚¯è©³ç´°"
+        MsgBox msg, vbInformation, "ƒ^ƒXƒNÚ×"
     Else
-        MsgBox "ã‚¿ã‚¹ã‚¯æƒ…å ±ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚", vbExclamation"
+        MsgBox "ƒ^ƒXƒNî•ñ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ‚Å‚µ‚½B", vbExclamation"
     End If
 
     Exit Sub
 
 ErrHandler:
-    MsgBox "ã‚¿ã‚¹ã‚¯è©³ç´°ã®è¡¨ç¤ºä¸­ã«ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ: " & Err.Description, vbCritical
+    MsgBox "ƒ^ƒXƒNÚ×‚Ì•\¦’†‚ÉƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½: " & Err.Description, vbCritical
 End Sub
