@@ -9,6 +9,17 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Option Explicit
 
-Private Sub CommandButton1_Click()
-    Call UpdateChartButton_Click
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// Sheet_GanttChart シートモジュール
+'// 「GanttChart」シートに配置されたボタンのアクションなどを記述します。
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+
+' ボタンがクリックされたときにガントチャートを更新します。
+Private Sub UpdateChartButton_Click()
+    On Error GoTo ErrHandler
+    Call M_GanttChart.UpdateGanttChart
+    Exit Sub
+ErrHandler:
+    MsgBox "チャート更新ボタンクリック時にエラーが発生しました: " & Err.Description, vbCritical
 End Sub
+

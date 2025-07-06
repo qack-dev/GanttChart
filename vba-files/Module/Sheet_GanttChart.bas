@@ -7,7 +7,7 @@ Option Explicit
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ' ボタンがクリックされたときにガントチャートを更新します。
-Public Sub UpdateChartButton_Click()
+Private Sub UpdateChartButton_Click()
     On Error GoTo ErrHandler
     Call M_GanttChart.UpdateGanttChart
     Exit Sub
