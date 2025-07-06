@@ -215,6 +215,45 @@ Private Sub HighlightTaskPeriod(ByVal wsGantt As Worksheet, ByVal taskRowIndex A
         End With
     End If
 
+<<<<<<< HEAD
+=======
+    ' グラフのデータ範囲を設定 (一時的にシートに書き出す)
+    wsGantt.Cells(1, 1).Value = "進捗"
+    wsGantt.Cells(1, 2).Value = progressPercentage
+
+    ' グラフの作成
+    Set chartObj = wsGantt.ChartObjects.Add(Left:=wsGantt.Cells(chartStartRow, chartStartCol).Left, _
+                                            Top:=wsGantt.Cells(chartStartRow + lastTaskRow + 3, chartStartCol).Top, _
+                                            Width:=300, Height:=150)
+    With chartObj
+        .Name = chartName
+        With .Chart
+            .ChartType = xlDoughnut
+            .SetSourceData Source:=wsGantt.Range(wsGantt.Cells(1, 1), wsGantt.Cells(1, 2))
+            .HasTitle = True
+            .ChartTitle.Text = "全体進捗率"
+            .ChartTitle.Font.Size = 10
+            .HasLegend = False
+            .ChartGroups(1).DoughnutHoleSize = 60
+
+            ' データ系列の設定
+            With .SeriesCollection(1)
+                .Points(1).Interior.Color = RGB(0, 176, 80) ' 完了部分 (緑)
+                .Points(2).Interior.Color = RGB(200, 200, 200) ' 未完了部分 (灰色)
+                .ApplyDataLabels
+                ' 各データラベルをループして設定
+                For Each dl In .DataLabels
+                    With dl
+                        .ShowPercentage = True
+                        .Font.Size = 10
+                        .Position = xlLabelPositionCenter
+                    End With
+                Next dl
+            End With
+        End With
+    End With
+
+>>>>>>> ebbfa819f61cab5c67d7badd685f80efd03e37fa
     Exit Sub
 
 ErrHandler:
@@ -239,6 +278,7 @@ Private Function GetColorByStatus(ByVal status As String) As Long
         Case Else
             GetColorByStatus = vbWhite ' 不明なステータスは白
     End Select
+<<<<<<< HEAD
 End Function
 
 '/**
@@ -250,3 +290,6 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, minDate 
     ' (現在の実装はShapeに依存している可能性があるため、レビューが必要です)
     MsgBox "UpdateLoadGraphは現在実装されていません。", vbInformation
 End Sub
+=======
+End Function
+>>>>>>> ebbfa819f61cab5c67d7badd685f80efd03e37fa
