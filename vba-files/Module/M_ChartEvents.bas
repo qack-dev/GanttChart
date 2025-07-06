@@ -67,3 +67,4 @@ Public Sub ShowTaskDetails()
 ErrHandler:
     MsgBox "タスク詳細の表示中にエラーが発生しました: " & Err.Description, vbCritical
 End Sub
+
