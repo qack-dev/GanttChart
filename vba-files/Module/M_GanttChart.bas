@@ -13,10 +13,10 @@ Private Const TIMELINE_NAME_PREFIX As String = "Timeline_"
 Private Const PROGRESS_NAME_PREFIX As String = "Progress_"
 
 ' Task Status
-Private Const STATUS_UNSTARTED As String = "未着手"
-Private Const STATUS_IN_PROGRESS As String = "進行中"
-Private Const STATUS_COMPLETED As String = "完了"
-Private Const STATUS_DELAYED As String = "遅延"
+Private Const STATUS_UNSTARTED As String = "Unstarted"
+Private Const STATUS_IN_PROGRESS As String = "In Progress"
+Private Const STATUS_COMPLETED As String = "Completed"
+Private Const STATUS_DELAYED As String = "Delayed"
 
 
 ' Main procedure to update the Gantt chart
@@ -28,7 +28,7 @@ Public Sub UpdateGanttChart()
     Dim wsSettings As Worksheet
     Dim appSettings As Settings
     Dim allTasks As Tasks
-    Dim task As C_Task
+    Dim task As Object
     Dim minDate As Date
     Dim maxDate As Date
     Dim i As Long
@@ -45,7 +45,7 @@ Public Sub UpdateGanttChart()
     allTasks.LoadFromSheet wsTasks
 
     If allTasks.Count = 0 Then
-        MsgBox "タスクデータがありません。", vbInformation
+        MsgBox "No task data found.", vbInformation
         Exit Sub
     End If
 
@@ -60,11 +60,10 @@ Public Sub UpdateGanttChart()
     Call DrawTimeline(wsGantt, minDate, maxDate, appSettings.ChartStartRow, appSettings.ChartStartCol, appSettings.ColWidth)
 
     ' Draw the bar for each task
-    i = 0
-    For Each task In allTasks
-        Call DrawTaskBar(wsGantt, task, appSettings, minDate, i)
-        i = i + 1
-    Next task
+    For i = 1 To allTasks.Count
+        Set task = allTasks.Item(i)
+        Call DrawTaskBar(wsGantt, task, appSettings, minDate, i - 1)
+    Next i
 
     ' Update the overall progress chart
     Call UpdateOverallProgressChart(wsGantt, allTasks, appSettings)
@@ -93,7 +92,7 @@ Private Sub ClearGanttChart(wsGantt As Worksheet)
 End Sub
 
 ' Draws a bar corresponding to a single task
-Private Sub DrawTaskBar(wsGantt As Worksheet, task As C_Task, appSettings As Settings, minChartDate As Date, index As Long)
+Private Sub DrawTaskBar(wsGantt As Worksheet, task As Object, appSettings As Settings, minChartDate As Date, index As Long)
     On Error GoTo ErrHandler
 
     Dim barLeft As Double
@@ -106,21 +105,21 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, task As C_Task, appSettings As Set
     rowNum = appSettings.ChartStartRow + index
 
     ' Calculate the starting position and width of the bar
-    barLeft = wsGantt.Cells(rowNum, 1).Left + (task.StartDate - minChartDate) * appSettings.ColWidth
+    barLeft = wsGantt.Cells(rowNum, 1).Left + (task("StartDate") - minChartDate) * appSettings.ColWidth
     barTop = wsGantt.Cells(rowNum, 1).Top + (wsGantt.Cells(rowNum, 1).Height - appSettings.BarHeight) / 2
-    barWidth = (task.EndDate - task.StartDate + 1) * appSettings.ColWidth
+    barWidth = (task("EndDate") - task("StartDate") + 1) * appSettings.ColWidth
 
     ' Get the color based on the status
-    barColor = GetColorByStatus(task.Status, appSettings)
+    barColor = GetColorByStatus(task("Status"), appSettings)
 
     ' Draw the bar
     Set taskShape = wsGantt.Shapes.AddShape(msoShapeRectangle, barLeft, barTop, barWidth, appSettings.BarHeight)
     With taskShape
         .Fill.ForeColor.RGB = barColor
         .Line.Visible = msoFalse
-        .Name = TASK_BAR_NAME_PREFIX & task.TaskID
+        .Name = TASK_BAR_NAME_PREFIX & task("TaskID")
         .OnAction = "M_ChartEvents.ShowTaskDetails"
-        .TextFrame2.TextRange.Text = task.TaskName
+        .TextFrame2.TextRange.Text = task("TaskName")
         With .TextFrame2.TextRange.Font.Fill
             .Visible = msoTrue
             .ForeColor.RGB = RGB(0, 0, 0)
@@ -188,7 +187,8 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, allTasks As Tasks, 
     Dim progressPercentage As Double
     Dim chartObj As ChartObject
     Dim chartData(1 To 2) As Double
-    Dim task As C_Task
+    Dim task As Object
+    Dim i As Long
 
     ' Delete the old chart
     On Error Resume Next
@@ -198,14 +198,15 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, allTasks As Tasks, 
     totalDuration = 0
     completedDuration = 0
 
-    For Each task In allTasks
-        totalDuration = totalDuration + task.Duration
-        If task.Status = STATUS_COMPLETED Then
-            completedDuration = completedDuration + task.Duration
+    For i = 1 To allTasks.Count
+        Set task = allTasks.Item(i)
+        totalDuration = totalDuration + task("Duration")
+        If task("Status") = STATUS_COMPLETED Then
+            completedDuration = completedDuration + task("Duration")
         Else
-            completedDuration = completedDuration + (task.Duration * task.Progress)
+            completedDuration = completedDuration + (task("Duration") * task("Progress"))
         End If
-    Next task
+    Next i
 
     If totalDuration > 0 Then
         progressPercentage = completedDuration / totalDuration
@@ -229,7 +230,7 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, allTasks As Tasks, 
         With .Chart
             .ChartType = xlDoughnut
             .HasTitle = True
-            .ChartTitle.Text = "全体進捗率"
+            .ChartTitle.Text = "Overall Progress"
             .ChartTitle.Font.Size = 10
             .HasLegend = False
             .ChartGroups(1).DoughnutHoleSize = 75

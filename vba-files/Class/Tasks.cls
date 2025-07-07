@@ -1,9 +1,17 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
 Attribute VB_Name = "Tasks"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 '// Tasks Class Module
-'// Manages a collection of C_Task objects.
+'// Manages a collection of task data using Scripting.Dictionary objects.
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Private m_Tasks As Collection
@@ -12,11 +20,7 @@ Private Sub Class_Initialize()
     Set m_Tasks = New Collection
 End Sub
 
-Public Sub Add(task As C_Task)
-    m_Tasks.Add task, CStr(task.TaskID)
-End Sub
-
-Public Function Item(index As Variant) As C_Task
+Public Function Item(index As Variant) As Object
     Set Item = m_Tasks.Item(index)
 End Function
 
@@ -27,46 +31,63 @@ End Function
 Public Sub LoadFromSheet(wsTasks As Worksheet)
     Dim lastRow As Long
     Dim i As Long
-    Dim task As C_Task
+    Dim taskData As Object ' Use Object for Scripting.Dictionary
+
+    ' Clear existing tasks before loading new ones
+    Set m_Tasks = New Collection
 
     lastRow = wsTasks.Cells(wsTasks.Rows.Count, 2).End(xlUp).Row
     If lastRow < 2 Then Exit Sub
 
     For i = 2 To lastRow
-        Set task = New C_Task
-        With task
-            .TaskID = wsTasks.Cells(i, 1).Value
-            .TaskName = wsTasks.Cells(i, 2).Value
-            .Duration = wsTasks.Cells(i, 3).Value
-            .StartDate = wsTasks.Cells(i, 4).Value
-            .EndDate = wsTasks.Cells(i, 5).Value
-            .Progress = wsTasks.Cells(i, 6).Value
-            .Status = wsTasks.Cells(i, 7).Value
+        Set taskData = CreateObject("Scripting.Dictionary")
+        With taskData
+            .Add "TaskID", wsTasks.Cells(i, 1).Value
+            .Add "TaskName", wsTasks.Cells(i, 2).Value
+            .Add "Duration", wsTasks.Cells(i, 3).Value
+            .Add "StartDate", wsTasks.Cells(i, 4).Value
+            .Add "EndDate", wsTasks.Cells(i, 5).Value
+            .Add "Progress", wsTasks.Cells(i, 6).Value
+            .Add "Status", wsTasks.Cells(i, 7).Value
         End With
-        Add task
+        
+        ' Add the task data to the collection, handling potential duplicate keys
+        On Error Resume Next
+        m_Tasks.Add taskData, CStr(taskData("TaskID"))
+        If Err.Number <> 0 Then
+            ' If a duplicate key error occurs, ignore it and continue.
+            ' You could add logging here if needed.
+            Err.Clear
+        End If
+        On Error GoTo 0
     Next i
 End Sub
 
 Public Function GetMinDate() As Date
     Dim minD As Date
-    Dim task As C_Task
+    Dim taskData As Object
     minD = #12/31/9999#
-    For Each task In m_Tasks
-        If task.StartDate < minD Then
-            minD = task.StartDate
+    For Each taskData In m_Tasks
+        If taskData("StartDate") < minD Then
+            minD = taskData("StartDate")
         End If
-    Next task
+    Next taskData
     GetMinDate = minD
 End Function
 
 Public Function GetMaxDate() As Date
     Dim maxD As Date
-    Dim task As C_Task
+    Dim taskData As Object
     maxD = #1/1/1900#
-    For Each task In m_Tasks
-        If task.EndDate > maxD Then
-            maxD = task.EndDate
+    For Each taskData In m_Tasks
+        If taskData("EndDate") > maxD Then
+            maxD = taskData("EndDate")
         End If
-    Next task
+    Next taskData
     GetMaxDate = maxD
+End Function
+
+' Allows "For Each" iteration over the collection
+Public Function NewEnum() As IUnknown
+    Set NewEnum = m_Tasks.[_NewEnum]
 End Function
