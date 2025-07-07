@@ -2,165 +2,128 @@ Attribute VB_Name = "M_GanttChart"
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
-'// M_GanttChart モジュール
-'// ガントチャートの描画、更新、全体進捗グラフの更新など、主要なロジックを格納します。
+'// M_GanttChart Module
+'// Contains the main logic for drawing, updating the Gantt chart, and updating the overall progress graph.
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
-' Tasksシートの列インデックス
-Private Const COL_TASK_ID As Long = 1
-Private Const COL_TASK_NAME As Long = 2
-Private Const COL_DURATION As Long = 3
-Private Const COL_START_DATE As Long = 4
-Private Const COL_END_DATE As Long = 5
-Private Const COL_PROGRESS As Long = 6
-Private Const COL_STATUS As Long = 7
+' Chart Objects Name
+Private Const OVERALL_PROGRESS_CHART_NAME As String = "OverallProgressChart"
+Private Const TASK_BAR_NAME_PREFIX As String = "TaskBar_"
+Private Const TIMELINE_NAME_PREFIX As String = "Timeline_"
+Private Const PROGRESS_NAME_PREFIX As String = "Progress_"
 
-' Settingsシートのセル参照
-Private Const SETTING_CHART_START_ROW As Long = 1
-Private Const SETTING_CHART_START_COL As Long = 2
-Private Const SETTING_BAR_HEIGHT As Long = 3
-Private Const SETTING_ROW_HEIGHT As Long = 4
-Private Const SETTING_COL_WIDTH As Long = 5
-Private Const SETTING_COLOR_UNSTARTED As Long = 6
-Private Const SETTING_COLOR_IN_PROGRESS As Long = 7
-Private Const SETTING_COLOR_COMPLETED As Long = 8
-Private Const SETTING_COLOR_DELAYED As Long = 9
+' Task Status
+Private Const STATUS_UNSTARTED As String = "未着手"
+Private Const STATUS_IN_PROGRESS As String = "進行中"
+Private Const STATUS_COMPLETED As String = "完了"
+Private Const STATUS_DELAYED As String = "遅延"
 
-' ガントチャートを更新するメインプロシージャ
+
+' Main procedure to update the Gantt chart
 Public Sub UpdateGanttChart()
     On Error GoTo ErrHandler
 
     Dim wsGantt As Worksheet
     Dim wsTasks As Worksheet
     Dim wsSettings As Worksheet
-    Dim lastTaskRow As Long
-    Dim i As Long
-    Dim taskID As Long
-    Dim taskName As String
-    Dim duration As Long
-    Dim startDate As Date
-    Dim endDate As Date
-    Dim progress As Double
-    Dim status As String
+    Dim appSettings As Settings
+    Dim allTasks As Tasks
+    Dim task As C_Task
     Dim minDate As Date
     Dim maxDate As Date
-    Dim chartStartCol As Long
-    Dim chartStartRow As Long
-    Dim barHeight As Long
-    Dim rowHeight As Long
-    Dim colWidth As Long
+    Dim i As Long
 
     Set wsGantt = ThisWorkbook.Sheets("GanttChart")
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
     Set wsSettings = ThisWorkbook.Sheets("Settings")
 
-    ' 既存のチャートをクリア
-    Call ClearGanttChart(wsGantt)
+    ' Load settings and tasks
+    Set appSettings = New Settings
+    appSettings.LoadFromSheet wsSettings
+    
+    Set allTasks = New Tasks
+    allTasks.LoadFromSheet wsTasks
 
-    ' 設定値の読み込み
-    chartStartRow = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_CHART_START_COL).Value ' 例: Settings!B1 に開始行
-    chartStartCol = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_CHART_START_COL + 1).Value ' 例: Settings!C1 に開始列
-    barHeight = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_BAR_HEIGHT + 1).Value    ' 例: Settings!D1 にバーの高さ
-    rowHeight = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_ROW_HEIGHT + 1).Value    ' 例: Settings!E1 に行の高さ
-    colWidth = wsSettings.Cells(SETTING_CHART_START_ROW, SETTING_COL_WIDTH + 1).Value     ' 例: Settings!F1 に列の幅
-
-    ' タスクデータの最終行を取得 (TasksシートのB列を基準)
-    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, COL_TASK_NAME).End(xlUp).Row
-
-    If lastTaskRow < 2 Then ' ヘッダー行のみの場合
+    If allTasks.Count = 0 Then
         MsgBox "タスクデータがありません。", vbInformation
         Exit Sub
     End If
 
-    ' 日付範囲の特定
-    minDate = wsTasks.Cells(2, COL_START_DATE).Value ' 開始日のヘッダー
-    maxDate = wsTasks.Cells(2, COL_END_DATE).Value ' 終了日のヘッダー
+    ' Clear the old chart elements
+    Call ClearGanttChart(wsGantt)
 
-    For i = 2 To lastTaskRow
-        If wsTasks.Cells(i, COL_START_DATE).Value < minDate Then minDate = wsTasks.Cells(i, COL_START_DATE).Value
-        If wsTasks.Cells(i, COL_END_DATE).Value > maxDate Then maxDate = wsTasks.Cells(i, COL_END_DATE).Value
-    Next i
+    ' Determine the date range for the chart
+    minDate = allTasks.GetMinDate
+    maxDate = allTasks.GetMaxDate
 
-    ' タイムラインの描画
-    Call DrawTimeline(wsGantt, minDate, maxDate, chartStartRow, chartStartCol, colWidth)
+    ' Draw the timeline
+    Call DrawTimeline(wsGantt, minDate, maxDate, appSettings.ChartStartRow, appSettings.ChartStartCol, appSettings.ColWidth)
 
-    ' 各タスクのバーを描画
-    For i = 2 To lastTaskRow
-        taskID = wsTasks.Cells(i, COL_TASK_ID).Value
-        taskName = wsTasks.Cells(i, COL_TASK_NAME).Value
-        duration = wsTasks.Cells(i, COL_DURATION).Value
-        startDate = wsTasks.Cells(i, COL_START_DATE).Value
-        endDate = wsTasks.Cells(i, COL_END_DATE).Value
-        progress = wsTasks.Cells(i, COL_PROGRESS).Value
-        status = wsTasks.Cells(i, COL_STATUS).Value
+    ' Draw the bar for each task
+    i = 0
+    For Each task In allTasks
+        Call DrawTaskBar(wsGantt, task, appSettings, minDate, i)
+        i = i + 1
+    Next task
 
-        ' タスクバーの描画
-        Call DrawTaskBar(wsGantt, taskID, taskName, startDate, endDate, status, _
-                         chartStartRow + i - 1, chartStartCol, colWidth, barHeight, minDate)
-    Next i
-
-    ' 全体進捗グラフの更新
-    Call UpdateLoadGraph(wsGantt, wsTasks, chartStartRow, chartStartCol, colWidth, minDate, maxDate)
+    ' Update the overall progress chart
+    Call UpdateOverallProgressChart(wsGantt, allTasks, appSettings)
 
     Exit Sub
 
 ErrHandler:
-    MsgBox "ガントチャートの更新中にエラーが発生しました: " & Err.Description, vbCritical
+    MsgBox "Error in UpdateGanttChart: " & Err.Description, vbCritical
 End Sub
 
-' 既存のガントチャートをクリアする
+' Clears the Gantt chart of all shapes
 Private Sub ClearGanttChart(wsGantt As Worksheet)
-    On Error Resume Next ' エラーが発生しても処理を続行
+    On Error Resume Next ' Continue if a shape is not found
 
     Dim sh As Shape
     For Each sh In wsGantt.Shapes
-        If Left(sh.Name, 8) = "TaskBar_" Or Left(sh.Name, 9) = "Timeline_" Or Left(sh.Name, 10) = "Progress_" Then
+        If Left(sh.Name, Len(TASK_BAR_NAME_PREFIX)) = TASK_BAR_NAME_PREFIX Or _
+           Left(sh.Name, Len(TIMELINE_NAME_PREFIX)) = TIMELINE_NAME_PREFIX Or _
+           Left(sh.Name, Len(PROGRESS_NAME_PREFIX)) = PROGRESS_NAME_PREFIX Or _
+           sh.Type = msoChart Then
             sh.Delete
         End If
     Next sh
 
-    ' グラフもクリア (もしあれば)
-    For Each sh In wsGantt.Shapes
-        If sh.Type = msoChart Then
-            sh.Delete
-        End If
-    Next sh
-
-    On Error GoTo 0 ' エラーハンドリングをリセット
+    On Error GoTo 0 ' Reset error handling
 End Sub
 
-' 1つのタスクに対応するバーを描画する
-Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String, _
-                        startDate As Date, endDate As Date, status As String, _
-                        rowNum As Long, chartStartCol As Long, colWidth As Long, barHeight As Long, _
-                        minChartDate As Date)
+' Draws a bar corresponding to a single task
+Private Sub DrawTaskBar(wsGantt As Worksheet, task As C_Task, appSettings As Settings, minChartDate As Date, index As Long)
     On Error GoTo ErrHandler
 
     Dim barLeft As Double
     Dim barTop As Double
     Dim barWidth As Double
     Dim barColor As Long
-    Dim sh As Shape
+    Dim taskShape As Shape
+    Dim rowNum As Long
 
-    ' バーの開始位置と幅を計算
-    barLeft = wsGantt.Cells(rowNum, 1).Left + (startDate - minChartDate) * colWidth
-    barTop = wsGantt.Cells(rowNum, 1).Top + (wsGantt.Cells(rowNum, 1).Height - barHeight) / 2
-    barWidth = (endDate - startDate + 1) * colWidth
+    rowNum = appSettings.ChartStartRow + index
 
-    ' ステータスに応じた色を取得
-    barColor = GetColorByStatus(status)
+    ' Calculate the starting position and width of the bar
+    barLeft = wsGantt.Cells(rowNum, 1).Left + (task.StartDate - minChartDate) * appSettings.ColWidth
+    barTop = wsGantt.Cells(rowNum, 1).Top + (wsGantt.Cells(rowNum, 1).Height - appSettings.BarHeight) / 2
+    barWidth = (task.EndDate - task.StartDate + 1) * appSettings.ColWidth
 
-    ' バーを描画
-    Set sh = wsGantt.Shapes.AddShape(msoShapeRectangle, barLeft, barTop, barWidth, barHeight)
-    With sh
+    ' Get the color based on the status
+    barColor = GetColorByStatus(task.Status, appSettings)
+
+    ' Draw the bar
+    Set taskShape = wsGantt.Shapes.AddShape(msoShapeRectangle, barLeft, barTop, barWidth, appSettings.BarHeight)
+    With taskShape
         .Fill.ForeColor.RGB = barColor
         .Line.Visible = msoFalse
-        .Name = "TaskBar_" & taskID ' タスクIDを名前に含める
-        .OnAction = "M_ChartEvents.ShowTaskDetails" ' クリックイベントのマクロを割り当て
-        .TextFrame2.TextRange.Text = taskName
+        .Name = TASK_BAR_NAME_PREFIX & task.TaskID
+        .OnAction = "M_ChartEvents.ShowTaskDetails"
+        .TextFrame2.TextRange.Text = task.TaskName
         With .TextFrame2.TextRange.Font.Fill
             .Visible = msoTrue
-            .ForeColor.RGB = RGB(0, 0, 0) ' テキスト色を黒に設定
+            .ForeColor.RGB = RGB(0, 0, 0)
             .Transparency = 0
             .Solid
         End With
@@ -174,10 +137,10 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String
     Exit Sub
 
 ErrHandler:
-    MsgBox "タスクバーの描画中にエラーが発生しました: " & Err.Description, vbCritical
+    MsgBox "Error in DrawTaskBar: " & Err.Description, vbCritical
 End Sub
 
-' タイムラインを描画する
+' Draws the timeline
 Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Date, _
                          chartStartRow As Long, chartStartCol As Long, colWidth As Long)
     On Error GoTo ErrHandler
@@ -186,85 +149,63 @@ Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Dat
     Dim colOffset As Long
     Dim headerRow As Long
 
-    headerRow = chartStartRow - 1 ' タイムラインのヘッダー行
+    headerRow = chartStartRow - 1
 
-    ' 日付ヘッダーのクリア
-    wsGantt.Range(wsGantt.Cells(headerRow, chartStartCol), wsGantt.Cells(headerRow, chartStartCol + (endDate - startDate + 1))).ClearContents
+    ' Clear the timeline header
+    wsGantt.Range(wsGantt.Cells(headerRow, chartStartCol), wsGantt.Cells(headerRow, chartStartCol + (endDate - startDate + 1))).Clear
 
     colOffset = 0
     For currentDate = startDate To endDate
-        wsGantt.Cells(headerRow, chartStartCol + colOffset).Value = Format(currentDate, "m/d")
-        wsGantt.Cells(headerRow, chartStartCol + colOffset).ColumnWidth = colWidth / 6 ' 日付表示に合わせて調整
-        wsGantt.Cells(headerRow, chartStartCol + colOffset).HorizontalAlignment = xlCenter
-        wsGantt.Cells(headerRow, chartStartCol + colOffset).VerticalAlignment = xlCenter
-        wsGantt.Cells(headerRow, chartStartCol + colOffset).Orientation = 90 ' 縦書き
+        With wsGantt.Cells(headerRow, chartStartCol + colOffset)
+            .Value = Format(currentDate, "m/d")
+            .ColumnWidth = colWidth / 6
+            .HorizontalAlignment = xlCenter
+            .VerticalAlignment = xlCenter
+            .Orientation = 90
 
-        ' 週末の背景色を変更
-        If Weekday(currentDate, vbSaturday) = vbSaturday Or Weekday(currentDate, vbSaturday) = vbSunday Then
-            With wsGantt.Cells(headerRow, chartStartCol + colOffset).Interior
-                .Color = RGB(220, 220, 220) ' 薄い灰色
-            End With
-        Else
-            With wsGantt.Cells(headerRow, chartStartCol + colOffset).Interior
-                .Pattern = xlNone
-            End With
-        End If
-
+            ' Change the background color of weekends
+            If Weekday(currentDate) = vbSaturday Or Weekday(currentDate) = vbSunday Then
+                .Interior.Color = RGB(220, 220, 220)
+            Else
+                .Interior.Pattern = xlNone
+            End If
+        End With
         colOffset = colOffset + 1
     Next currentDate
 
     Exit Sub
 
 ErrHandler:
-    MsgBox "タイムラインの描画中にエラーが発生しました: " & Err.Description, vbCritical
+    MsgBox "Error in DrawTimeline: " & Err.Description, vbCritical
 End Sub
 
-' 全体進捗グラフを更新する
-Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
-                            chartStartRow As Long, chartStartCol As Long, colWidth As Long, _
-                            minChartDate As Date, maxChartDate As Date)
+' Updates the overall progress chart
+Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, allTasks As Tasks, appSettings As Settings)
     On Error GoTo ErrHandler
 
-    Dim lastTaskRow As Long
-    Dim i As Long
     Dim totalDuration As Double
     Dim completedDuration As Double
     Dim progressPercentage As Double
     Dim chartObj As ChartObject
-    Dim chartName As String
-    Dim dl As DataLabel ' DataLabelオブジェクトを宣言
+    Dim chartData(1 To 2) As Double
+    Dim task As C_Task
 
-    chartName = "OverallProgressChart"
+    ' Delete the old chart
+    On Error Resume Next
+    wsGantt.ChartObjects(OVERALL_PROGRESS_CHART_NAME).Delete
+    On Error GoTo ErrHandler
 
-    ' 既存のグラフを削除
-    For Each chartObj In wsGantt.ChartObjects
-        If chartObj.Name = chartName Then
-            chartObj.Delete
-            Exit For
-        End If
-    Next chartObj
-
-    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, COL_TASK_NAME).End(xlUp).Row
     totalDuration = 0
     completedDuration = 0
 
-    For i = 2 To lastTaskRow
-        Dim duration As Long
-        Dim progress As Double
-        Dim status As String
-
-        duration = wsTasks.Cells(i, COL_DURATION).Value ' 期間
-        progress = wsTasks.Cells(i, COL_PROGRESS).Value ' 進捗
-        status = wsTasks.Cells(i, COL_STATUS).Value   ' ステータス
-
-        totalDuration = totalDuration + duration
-
-        If status = "完了" Then
-            completedDuration = completedDuration + duration
+    For Each task In allTasks
+        totalDuration = totalDuration + task.Duration
+        If task.Status = STATUS_COMPLETED Then
+            completedDuration = completedDuration + task.Duration
         Else
-            completedDuration = completedDuration + (duration * progress)
+            completedDuration = completedDuration + (task.Duration * task.Progress)
         End If
-    Next i
+    Next task
 
     If totalDuration > 0 Then
         progressPercentage = completedDuration / totalDuration
@@ -272,38 +213,47 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
         progressPercentage = 0
     End If
 
-    ' グラフのデータ範囲を設定 (一時的にシートに書き出す)
-    wsGantt.Cells(1, 1).Value = "進捗"
-    wsGantt.Cells(1, 2).Value = progressPercentage
+    ' Store the chart data in an array
+    chartData(1) = progressPercentage
+    chartData(2) = 1 - progressPercentage
 
-    ' グラフの作成
-    Set chartObj = wsGantt.ChartObjects.Add(Left:=wsGantt.Cells(chartStartRow, chartStartCol).Left, _
-                                            Top:=wsGantt.Cells(chartStartRow + lastTaskRow + 3, chartStartCol).Top, _
-                                            Width:=300, Height:=150)
+    ' Create the chart
+    Set chartObj = wsGantt.ChartObjects.Add( _
+        Left:=wsGantt.Cells(appSettings.ChartStartRow + allTasks.Count, 1).Left, _
+        Top:=wsGantt.Cells(appSettings.ChartStartRow + allTasks.Count, 1).Top + 20, _
+        Width:=200, _
+        Height:=120)
+
     With chartObj
-        .Name = chartName
+        .Name = OVERALL_PROGRESS_CHART_NAME
         With .Chart
             .ChartType = xlDoughnut
-            .SetSourceData Source:=wsGantt.Range(wsGantt.Cells(1, 1), wsGantt.Cells(1, 2))
             .HasTitle = True
             .ChartTitle.Text = "全体進捗率"
             .ChartTitle.Font.Size = 10
             .HasLegend = False
-            .ChartGroups(1).DoughnutHoleSize = 60
+            .ChartGroups(1).DoughnutHoleSize = 75
 
-            ' データ系列の設定
-            With .SeriesCollection(1)
-                .Points(1).Interior.Color = RGB(0, 176, 80) ' 完了部分 (緑)
-                .Points(2).Interior.Color = RGB(200, 200, 200) ' 未完了部分 (灰色)
+            ' Set the data from the array
+            With .SeriesCollection.NewSeries
+                .Values = chartData
+                .Points(1).Format.Fill.ForeColor.RGB = RGB(0, 176, 80) ' Completed (Green)
+                .Points(2).Format.Fill.ForeColor.RGB = RGB(220, 220, 220) ' Incomplete (Gray)
+                .Points(1).Border.LineStyle = xlNone
+                .Points(2).Border.LineStyle = xlNone
+
+                ' Remove all data labels
                 .ApplyDataLabels
-                ' 各データラベルをループして設定
-                For Each dl In .DataLabels
-                    With dl
-                        .ShowPercentage = True
-                        .Font.Size = 10
-                        .Position = xlLabelPositionCenter
-                    End With
-                Next dl
+                .DataLabels.Delete
+
+                ' Add a data label for the center
+                .Points(1).ApplyDataLabels
+                With .DataLabels(1)
+                    .Text = Format(progressPercentage, "0%")
+                    .Font.Size = 12
+                    .Font.Bold = True
+                    .Position = xlLabelPositionCenter
+                End With
             End With
         End With
     End With
@@ -311,24 +261,21 @@ Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, _
     Exit Sub
 
 ErrHandler:
-    MsgBox "全体進捗グラフの更新中にエラーが発生しました: " & Err.Description, vbCritical
+    MsgBox "Error in UpdateOverallProgressChart: " & Err.Description, vbCritical
 End Sub
 
-' ステータスに応じた色を返す関数
-Private Function GetColorByStatus(status As String) As Long
-    Dim wsSettings As Worksheet
-    Set wsSettings = ThisWorkbook.Sheets("Settings")
-
+' Returns a color based on the status
+Private Function GetColorByStatus(status As String, appSettings As Settings) As Long
     Select Case status
-        Case "未着手"
-            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 1, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G2 に未着手の色
-        Case "進行中"
-            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 2, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G3 に進行中の色
-        Case "完了"
-            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 3, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G4 に完了の色
-        Case "遅延"
-            GetColorByStatus = wsSettings.Cells(SETTING_CHART_START_ROW + 4, SETTING_COL_WIDTH + 1).Value ' 例: Settings!G5 に遅延の色
+        Case STATUS_UNSTARTED
+            GetColorByStatus = appSettings.ColorUnstarted
+        Case STATUS_IN_PROGRESS
+            GetColorByStatus = appSettings.ColorInProgress
+        Case STATUS_COMPLETED
+            GetColorByStatus = appSettings.ColorCompleted
+        Case STATUS_DELAYED
+            GetColorByStatus = appSettings.ColorDelayed
         Case Else
-            GetColorByStatus = RGB(192, 192, 192) ' デフォルト色 (灰色)
+            GetColorByStatus = RGB(192, 192, 192) ' Default Color (Gray)
     End Select
 End Function
