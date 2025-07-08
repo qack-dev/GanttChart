@@ -10,11 +10,11 @@ Attribute VB_Exposed = True
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
-'// Sheet_GanttChart シートモジュール
-'// 「GanttChart」シートに配置されたボタンのアクションなどを記述します。
+'// Sheet_GanttChart Sheet Module
+'// Describes actions for buttons placed on the "GanttChart" sheet, etc.
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
-' ボタンがクリックされたときにガントチャートを更新します。
+' Updates the Gantt chart when the button is clicked.
 Private Sub UpdateChartButton_Click()
     On Error GoTo ErrHandler
     Call M_GanttChart.UpdateGanttChart
@@ -22,4 +22,3 @@ Private Sub UpdateChartButton_Click()
 ErrHandler:
     MsgBox "チャート更新ボタンクリック時にエラーが発生しました: " & Err.Description, vbCritical
 End Sub
-
