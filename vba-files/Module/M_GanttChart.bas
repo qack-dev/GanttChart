@@ -193,6 +193,11 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, wsTasks As Workshee
     Dim totalWorkload As Double, completedWorkload As Double, progressPercentage As Double
     Dim duration As Double, progress As Double, i As Long
 
+    ' --- 進捗率の計算 ---
+    ' 変数の初期化
+    totalWorkload = 0
+    completedWorkload = 0
+    
     For i = 2 To lastTaskRow
         If IsNumeric(wsTasks.Cells(i, COL_DURATION).Value) And IsNumeric(wsTasks.Cells(i, COL_PROGRESS).Value) Then
             duration = wsTasks.Cells(i, COL_DURATION).Value
@@ -204,37 +209,43 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, wsTasks As Workshee
 
     If totalWorkload > 0 Then progressPercentage = completedWorkload / totalWorkload Else progressPercentage = 0
 
-    Dim dataRange As Range: Set dataRange = wsGantt.Range("Z1:Z2")
-    dataRange.Cells(1, 1).Value = progressPercentage
-    dataRange.Cells(2, 1).Value = 1 - progressPercentage
-
+    ' --- グラフの作成と設定 ---
+    ' ※dataRange や SetSourceData を使わない方法
     Dim chObj As ChartObject
     Set chObj = wsGantt.ChartObjects.Add(Left:=wsGantt.Columns(2).Left, Top:=wsGantt.Rows(chartTopRow).Top, Width:=200, Height:=120)
+    
     With chObj
         .Name = SHAPE_NAME_PROGRESS_CHART
         With .Chart
             .ChartType = xlDoughnut
-            .SetSourceData Source:=dataRange
             .HasLegend = False
+
+            ' 新しいデータ系列を追加し、値を配列で直接設定する
+            Dim srs As Series
+            Set srs = .SeriesCollection.NewSeries
+            srs.Values = Array(progressPercentage, 1 - progressPercentage) '←セルではなく配列で値を渡す
+
             .DoughnutGroups(1).DoughnutHoleSize = 75
+            
             With .SeriesCollection(1)
-                ' ポイント1 (完了部分) の書式設定
+                ' ポイント1 (完了部分)
                 With .Points(1).Format.Fill
                     .Visible = msoTrue
                     .ForeColor.RGB = GetColorByStatus("完了")
                     .Solid
                 End With
                 
-                ' ポイント2 (未完了部分) の書式設定
+                ' ポイント2 (未完了部分)
                 With .Points(2).Format.Fill
                     .Visible = msoTrue
                     .ForeColor.RGB = RGB(220, 220, 220)
                     .Solid
                 End With
-
-                ' 系列の枠線の色を白に設定
+                
                 .Border.Color = RGB(255, 255, 255)
             End With
+            
+            ' タイトル設定
             .HasTitle = True
             With .ChartTitle
                 .Format.TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(89, 89, 89)
@@ -242,20 +253,20 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, wsTasks As Workshee
                 .Format.TextFrame2.TextRange.Font.Bold = msoTrue
                 .Text = Format(progressPercentage, "0.0%")
             End With
-            .PlotArea.Format.Fill.Visible = msoFalse
-            .PlotArea.Format.Fill.Visible = msoFalse 'プロットエリアは透明のまま
-
-            ' グラフ全体の背景（ChartArea）を設定
-            With .ChartArea.Format.Fill
-                .Visible = msoTrue ' 塗りつぶしを有効にする
-                .ForeColor.RGB = RGB(225, 235, 250) ' 背景色を青に設定
-                .Solid ' 単色で塗りつぶす
-            End With
             
-            .ChartArea.Format.Line.Visible = msoFalse ' 外枠の線は非表示のまま
+            .PlotArea.Format.Fill.Visible = msoFalse
+            
+            ' 背景色の設定 (前回のお話から青色を追加)
+            With .ChartArea.Format.Fill
+                .Visible = msoTrue
+                .ForeColor.RGB = RGB(225, 235, 250)
+                .Solid
+            End With
+            .ChartArea.Format.Line.Visible = msoFalse
         End With
     End With
-    ' dataRange.ClearContents
+    
+    ' このサブルーチンの最後にセルの値を消す処理 (ClearContents) が無いことを確認
 End Sub
 
 Private Function GetColorByStatus(status As String) As Long
