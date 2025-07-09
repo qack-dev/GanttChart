@@ -218,8 +218,21 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, wsTasks As Workshee
             .HasLegend = False
             .DoughnutGroups(1).DoughnutHoleSize = 75
             With .SeriesCollection(1)
-                .Points(1).Format.Fill.ForeColor.RGB = GetColorByStatus("完了")
-                .Points(2).Format.Fill.ForeColor.RGB = RGB(220, 220, 220)
+                ' ポイント1 (完了部分) の書式設定
+                With .Points(1).Format.Fill
+                    .Visible = msoTrue
+                    .ForeColor.RGB = GetColorByStatus("完了")
+                    .Solid
+                End With
+                
+                ' ポイント2 (未完了部分) の書式設定
+                With .Points(2).Format.Fill
+                    .Visible = msoTrue
+                    .ForeColor.RGB = RGB(220, 220, 220)
+                    .Solid
+                End With
+
+                ' 系列の枠線の色を白に設定
                 .Border.Color = RGB(255, 255, 255)
             End With
             .HasTitle = True
@@ -230,11 +243,19 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, wsTasks As Workshee
                 .Text = Format(progressPercentage, "0.0%")
             End With
             .PlotArea.Format.Fill.Visible = msoFalse
-            .ChartArea.Format.Fill.Visible = msoFalse
-            .ChartArea.Format.Line.Visible = msoFalse
+            .PlotArea.Format.Fill.Visible = msoFalse 'プロットエリアは透明のまま
+
+            ' グラフ全体の背景（ChartArea）を設定
+            With .ChartArea.Format.Fill
+                .Visible = msoTrue ' 塗りつぶしを有効にする
+                .ForeColor.RGB = RGB(225, 235, 250) ' 背景色を青に設定
+                .Solid ' 単色で塗りつぶす
+            End With
+            
+            .ChartArea.Format.Line.Visible = msoFalse ' 外枠の線は非表示のまま
         End With
     End With
-    dataRange.ClearContents
+    ' dataRange.ClearContents
 End Sub
 
 Private Function GetColorByStatus(status As String) As Long
