@@ -29,12 +29,12 @@ Private Sub Worksheet_Change(ByVal Target As Range)
         If Target.Row >= 2 Then
             ' 終了日 (E列) が変更された場合は、期間 (C列) を再計算
             If Target.Column = COL_END_DATE Then ' E列 (終了日)
-                ws.Cells(Target.Row, COL_DURATION).Value = ws.Cells(Target.Row, COL_END_DATE).Value - ws.Cells(Target.Row, COL_START_DATE).Value + 1
+                ws.Cells(Target.Row, COL_DURATION).value = ws.Cells(Target.Row, COL_END_DATE).value - ws.Cells(Target.Row, COL_START_DATE).value + 1
             End If
 
             ' 期間 (C列) または開始日 (D列) が変更された場合は、終了日 (E列) を再計算
             If Target.Column = COL_DURATION Or Target.Column = COL_START_DATE Then ' C列 (期間) または D列 (開始日)
-                ws.Cells(Target.Row, COL_END_DATE).Value = ws.Cells(Target.Row, COL_START_DATE).Value + ws.Cells(Target.Row, COL_DURATION).Value - 1
+                ws.Cells(Target.Row, COL_END_DATE).value = ws.Cells(Target.Row, COL_START_DATE).value + ws.Cells(Target.Row, COL_DURATION).value - 1
             End If
 
             ' ガントチャートを更新

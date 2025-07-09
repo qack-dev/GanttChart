@@ -4,9 +4,10 @@ BEGIN
 END
 Attribute VB_Name = "Tasks"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
+
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,7 +17,7 @@ Option Explicit
 
 Private m_Tasks As Collection
 
-Private Sub Class_Initialize()
+Private Sub class_initialize()
     Set m_Tasks = New Collection
 End Sub
 
@@ -42,13 +43,13 @@ Public Sub LoadFromSheet(wsTasks As Worksheet)
     For i = 2 To lastRow
         Set taskData = CreateObject("Scripting.Dictionary")
         With taskData
-            .Add "TaskID", wsTasks.Cells(i, 1).Value
-            .Add "TaskName", wsTasks.Cells(i, 2).Value
-            .Add "Duration", wsTasks.Cells(i, 3).Value
-            .Add "StartDate", wsTasks.Cells(i, 4).Value
-            .Add "EndDate", wsTasks.Cells(i, 5).Value
-            .Add "Progress", wsTasks.Cells(i, 6).Value
-            .Add "Status", wsTasks.Cells(i, 7).Value
+            .Add "TaskID", wsTasks.Cells(i, 1).value
+            .Add "TaskName", wsTasks.Cells(i, 2).value
+            .Add "Duration", wsTasks.Cells(i, 3).value
+            .Add "StartDate", wsTasks.Cells(i, 4).value
+            .Add "EndDate", wsTasks.Cells(i, 5).value
+            .Add "Progress", wsTasks.Cells(i, 6).value
+            .Add "Status", wsTasks.Cells(i, 7).value
         End With
         
         ' Add the task data to the collection, handling potential duplicate keys
@@ -91,3 +92,4 @@ End Function
 Public Function NewEnum() As IUnknown
     Set NewEnum = m_Tasks.[_NewEnum]
 End Function
+

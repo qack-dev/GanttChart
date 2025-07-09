@@ -35,9 +35,10 @@ Public Sub UpdateGanttChart()
 
     Set wsGantt = ThisWorkbook.Sheets("GanttChart")
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
+    Set wsSettings = ThisWorkbook.Sheets("Settings")
 
     ' Load settings and tasks
-    Set appSettings = New Settings
+    Set appSettings = Settings
     appSettings.LoadFromSheet wsSettings
     
     Set allTasks = New Tasks
@@ -56,7 +57,7 @@ Public Sub UpdateGanttChart()
     maxDate = allTasks.GetMaxDate
 
     ' Draw the timeline
-    Call DrawTimeline(wsGantt, minDate, maxDate, appSettings.ChartStartRow, appSettings.ChartStartCol, appSettings.ColWidth)
+    Call DrawTimeline(wsGantt, minDate, maxDate, appSettings.chartStartRow, appSettings.chartStartCol, appSettings.colWidth)
 
     ' Draw the bar for each task
     For i = 1 To allTasks.Count
@@ -101,12 +102,12 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, task As Object, appSettings As Set
     Dim taskShape As Shape
     Dim rowNum As Long
 
-    rowNum = appSettings.ChartStartRow + index
+    rowNum = appSettings.chartStartRow + index
 
     ' Calculate the starting position and width of the bar
-    barLeft = wsGantt.Cells(rowNum, 1).Left + (task("StartDate") - minChartDate) * appSettings.ColWidth
+    barLeft = wsGantt.Cells(rowNum, 1).Left + (task("StartDate") - minChartDate) * appSettings.colWidth
     barTop = wsGantt.Cells(rowNum, 1).Top + (wsGantt.Cells(rowNum, 1).Height - appSettings.BarHeight) / 2
-    barWidth = (task("EndDate") - task("StartDate") + 1) * appSettings.ColWidth
+    barWidth = (task("EndDate") - task("StartDate") + 1) * appSettings.colWidth
 
     ' Get the color based on the status
     barColor = GetColorByStatus(task("Status"), appSettings)
@@ -132,11 +133,6 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, task As Object, appSettings As Set
         .TextFrame2.WordArtformat = msoTextEffect1
     End With
 
-    ' --- 描画処理 ---
-    Call DrawTimeline(wsGantt, minDate, maxDate)
-    Call DrawAllTaskBars(wsGantt, wsTasks, lastTaskRow, minDate)
-    ' Call UpdateLoadGraph(wsGantt, wsTasks, minDate, maxDate) ' 必要に応じてコメント解除
-
     Exit Sub
 
 ErrHandler:
@@ -148,149 +144,10 @@ Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Dat
                          chartStartRow As Long, chartStartCol As Long, colWidth As Long)
     On Error GoTo ErrHandler
 
-'/**
-' * @brief ガントチャートの描画エリア（タイムライン、タスクバー、タスク名）をクリアします。
-' * @param wsGantt 対象のGanttChartシート
-' * @param lastTaskRow Tasksシートの最終行
-' */
-Private Sub ClearGanttArea(ByVal wsGantt As Worksheet, ByVal lastTaskRow As Long)
-    On Error Resume Next ' クリア対象が存在しない場合も考慮
-
-    ' --- タイムラインエリアのクリア ---
-    wsGantt.Rows(TIMELINE_ROW).Clear
-
-    ' --- タスク描画エリアのクリア ---
-    ' 前回の描画範囲が不明なため、十分な範囲をクリアする
-    Dim clearRange As Range
-    Set clearRange = wsGantt.Range(wsGantt.Cells(GANTT_START_ROW, GANTT_START_COL), wsGantt.Cells(GANTT_START_ROW + lastTaskRow + 5, 256))
-    
-    With clearRange
-        .ClearContents
-        .Interior.Color = xlNone
-        .Borders.LineStyle = xlNone
-    End With
-    
-    On Error GoTo 0
-End Sub
-
-'/**
-' * @brief タイムライン（日付ヘッダー）を描画します。
-' * @param wsGantt 対象のGanttChartシート
-' * @param startDate 表示する最初の日付
-' * @param endDate 表示する最後の日付
-' */
-Private Sub DrawTimeline(ByVal wsGantt As Worksheet, ByVal startDate As Date, ByVal endDate As Date)
     Dim currentDate As Date
-    Dim col As Long
-    
-    col = GANTT_START_COL + 1 ' タイムラインはタスク名の右の列から開始
+    Dim colOffset As Long
+    Dim headerRow As Long
 
-<<<<<<< HEAD
-    ' --- 日付の描画 ---
-    For currentDate = startDate To endDate
-        With wsGantt.Cells(TIMELINE_ROW, col)
-            .Value = Format(currentDate, "m/d")
-            .ColumnWidth = 4
-            .HorizontalAlignment = xlCenter
-            .VerticalAlignment = xlCenter
-            .Font.Size = 8
-            
-            ' --- 週末のハイライト ---
-            If Weekday(currentDate) = vbSaturday Or Weekday(currentDate) = vbSunday Then
-                .Interior.Color = RGB(240, 240, 240) ' 薄い灰色
-            End If
-            
-            ' --- 月の区切り線 ---
-            If Day(currentDate) = 1 Then
-                .Borders(xlEdgeLeft).LineStyle = xlContinuous
-                .Borders(xlEdgeLeft).Weight = xlThin
-            End If
-        End With
-        col = col + 1
-    Next currentDate
-End Sub
-
-'/**
-' * @brief すべてのタスクバー（セルの着色）を描画します。
-' * @param wsGantt 対象のGanttChartシート
-' * @param wsTasks Tasksシート
-' * @param lastTaskRow Tasksシートの最終行
-' * @param minDate タイムラインの開始日
-' */
-Private Sub DrawAllTaskBars(ByVal wsGantt As Worksheet, ByVal wsTasks As Worksheet, ByVal lastTaskRow As Long, ByVal minDate As Date)
-    Dim i As Long
-    For i = 2 To lastTaskRow
-        Dim taskName As String
-        Dim startDate As Date
-        Dim duration As Long
-        Dim status As String
-        
-        ' --- タスク情報を取得 ---
-        With wsTasks.Rows(i)
-            taskName = .Cells(COL_TASK_NAME).Value
-            startDate = .Cells(COL_START_DATE).Value
-            duration = .Cells(COL_DURATION).Value
-            status = .Cells(COL_STATUS).Value
-        End With
-        
-        ' --- タスクバーを描画 ---
-        Call HighlightTaskPeriod(wsGantt, i - 1, taskName, startDate, duration, status, minDate)
-    Next i
-End Sub
-
-'/**
-' * @brief 個別のタスクバー（セルの着色）を描画します。
-' * @param wsGantt 対象のGanttChartシート
-' * @param taskRowIndex GanttChartシート上のタスクの行インデックス (1から始まる)
-' * @param taskName タスク名
-' * @param startDate タスクの開始日
-' * @param duration タスクの期間（日数）
-' * @param status タスクのステータス
-' * @param minDate タイムラインの開始日
-' */
-Private Sub HighlightTaskPeriod(ByVal wsGantt As Worksheet, ByVal taskRowIndex As Long, ByVal taskName As String, ByVal startDate As Date, ByVal duration As Long, ByVal status As String, ByVal minDate As Date)
-    On Error GoTo ErrHandler
-
-    Dim startCol As Long
-    Dim endCol As Long
-    Dim taskRow As Long
-    Dim barColor As Long
-    Dim taskRange As Range
-
-    ' --- 描画位置の計算 ---
-    taskRow = GANTT_START_ROW + taskRowIndex - 1
-    startCol = (startDate - minDate) + GANTT_START_COL + 1
-    endCol = startCol + duration - 1
-
-    ' --- タスク名の表示 ---
-    wsGantt.Cells(taskRow, GANTT_START_COL).Value = taskName
-
-    ' --- 期間セルの特定と着色 ---
-    If startCol <= endCol Then
-        Set taskRange = wsGantt.Range(wsGantt.Cells(taskRow, startCol), wsGantt.Cells(taskRow, endCol))
-        
-        ' --- ステータスに応じた色を取得 ---
-        barColor = GetColorByStatus(status)
-        
-        ' --- セルの書式設定 ---
-        With taskRange.Interior
-            .Color = barColor
-        End With
-        
-        ' --- タスクバーに枠線を追加 ---
-        With taskRange.Borders
-            .LineStyle = xlContinuous
-            .Weight = xlThin
-            .Color = RGB(150, 150, 150)
-        End With
-    End If
-
-<<<<<<< HEAD
-=======
-    ' グラフのデータ範囲を設定 (一時的にシートに書き出す)
-    wsGantt.Cells(1, 1).Value = "進捗"
-    wsGantt.Cells(1, 2).Value = progressPercentage
-=======
     headerRow = chartStartRow - 1
 
     ' Clear the timeline header
@@ -299,7 +156,7 @@ Private Sub HighlightTaskPeriod(ByVal wsGantt As Worksheet, ByVal taskRowIndex A
     colOffset = 0
     For currentDate = startDate To endDate
         With wsGantt.Cells(headerRow, chartStartCol + colOffset)
-            .Value = Format(currentDate, "m/d")
+            .value = Format(currentDate, "m/d")
             .ColumnWidth = colWidth / 6
             .HorizontalAlignment = xlCenter
             .VerticalAlignment = xlCenter
@@ -363,11 +220,10 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, allTasks As Tasks, 
 
     ' Create the chart
     Set chartObj = wsGantt.ChartObjects.Add( _
-        Left:=wsGantt.Cells(appSettings.ChartStartRow + allTasks.Count, 1).Left, _
-        Top:=wsGantt.Cells(appSettings.ChartStartRow + allTasks.Count, 1).Top + 20, _
+        Left:=wsGantt.Cells(appSettings.chartStartRow + allTasks.Count, 1).Left, _
+        Top:=wsGantt.Cells(appSettings.chartStartRow + allTasks.Count, 1).Top + 20, _
         Width:=200, _
         Height:=120)
->>>>>>> dev_tmp
 
     With chartObj
         .Name = OVERALL_PROGRESS_CHART_NAME
@@ -403,48 +259,9 @@ Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, allTasks As Tasks, 
         End With
     End With
 
->>>>>>> ebbfa819f61cab5c67d7badd685f80efd03e37fa
     Exit Sub
 
 ErrHandler:
-<<<<<<< HEAD
-    MsgBox "タスクバーの描画中にエラーが発生しました: " & vbCrLf & "タスク名: " & taskName & vbCrLf & Err.Description, vbCritical
-End Sub
-
-'/**
-' * @brief ステータス文字列に対応する色定数を返します。
-' * @param status タスクのステータス
-' * @return 対応する色のLong値
-' */
-Private Function GetColorByStatus(ByVal status As String) As Long
-    Select Case status
-        Case "未着手"
-            GetColorByStatus = COLOR_UNSTARTED
-        Case "進行中"
-            GetColorByStatus = COLOR_IN_PROGRESS
-        Case "完了"
-            GetColorByStatus = COLOR_COMPLETED
-        Case "遅延"
-            GetColorByStatus = COLOR_DELAYED
-        Case Else
-            GetColorByStatus = vbWhite ' 不明なステータスは白
-    End Select
-<<<<<<< HEAD
-End Function
-
-'/**
-' * @brief （参考）負荷グラフを更新します。今回の改修範囲外ですが、必要に応じて利用します。
-' */
-Private Sub UpdateLoadGraph(wsGantt As Worksheet, wsTasks As Worksheet, minDate As Date, maxDate As Date)
-    ' このプロシージャは今回の改修要件には含まれていませんが、
-    ' 必要に応じてセルベースのデータと連携するように改修可能です。
-    ' (現在の実装はShapeに依存している可能性があるため、レビューが必要です)
-    MsgBox "UpdateLoadGraphは現在実装されていません。", vbInformation
-End Sub
-=======
-End Function
->>>>>>> ebbfa819f61cab5c67d7badd685f80efd03e37fa
-=======
     MsgBox "Error in UpdateOverallProgressChart: " & Err.Description, vbCritical
 End Sub
 
@@ -463,4 +280,3 @@ Private Function GetColorByStatus(status As String, appSettings As Settings) As 
             GetColorByStatus = RGB(192, 192, 192) ' Default Color (Gray)
     End Select
 End Function
->>>>>>> dev_tmp
