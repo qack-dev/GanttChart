@@ -91,6 +91,6 @@ VBAコードは、機能ごとに以下のモジュールに分割されてい�
 *   **エラーハンドリング**: 予期せぬエラーが発生した場合に備え、`On Error GoTo` などのエラーハンドリングを適切に実装します。
 *   **モジュール化**: 機能ごとにモジュールを分割し、コードの保守性と再利用性を高めます。
 
-## 補足
+## 補足：開発者用
 
-本プロジェクトは、Gemini CLI と XVBA の連携を想定して開発されています。XVBA を使用することで、Excel のマクロが無効になっていても、Excel シートの編集が可能になります。詳細については、[Gemini CLI + MCP で Excel を操作する](https://zenn.dev/acntechjp/articles/77a521ec0ac654) をご参照ください。
+本プロジェクトは、Gemini CLI と VS Code extexsion XVBA を連携して開発しています。XVBA を使用することで、Excel のマクロが無効になっていても、Excel シートの編集が可能になります。詳細については、[Gemini CLI + MCP で Excel を操作する](https://zenn.dev/acntechjp/articles/77a521ec0ac654) をご参照ください。
