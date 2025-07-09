@@ -7,13 +7,13 @@ Option Explicit
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ' Tasksシートの列インデックス
-Private Const COL_TASK_ID As Long = 1
-Private Const COL_TASK_NAME As Long = 2
-Private Const COL_DURATION As Long = 3
-Private Const COL_START_DATE As Long = 4
-Private Const COL_END_DATE As Long = 5
-Private Const COL_PROGRESS As Long = 6
-Private Const COL_STATUS As Long = 7
+Public Const COL_TASK_ID As Long = 1
+Public Const COL_TASK_NAME As Long = 2
+Public Const COL_DURATION As Long = 3
+Public Const COL_START_DATE As Long = 4
+Public Const COL_END_DATE As Long = 5
+Public Const COL_PROGRESS As Long = 6
+Public Const COL_STATUS As Long = 7
 
 ' クリックされたタスクの詳細を表示する
 Public Sub ShowTaskDetails()
@@ -62,9 +62,16 @@ Public Sub ShowTaskDetails()
         MsgBox "タスク情報が見つかりませんでした。", vbExclamation
     End If
 
+    ' 開放
+    Set wsTasks = Nothing
+
     Exit Sub
 
 ErrHandler:
     MsgBox "タスク詳細の表示中にエラーが発生しました: " & Err.Description, vbCritical
+
+    ' 開放
+    Set wsTasks = Nothing
+
 End Sub
 

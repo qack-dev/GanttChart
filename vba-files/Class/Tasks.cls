@@ -16,12 +16,16 @@ Option Explicit
 
 ' Tasksシートの列インデックス
 Private Const COL_TASK_ID As Long = 1
-Private Const COL_TASK_NAME As Long = 2
+Private Const COL_TASK_NAME = 2
 Private Const COL_DURATION As Long = 3
 Private Const COL_START_DATE As Long = 4
 Private Const COL_END_DATE As Long = 5
 Private Const COL_PROGRESS As Long = 6
 Private Const COL_STATUS As Long = 7
+
+Private Sub CommandButton1_Click()
+    Call DrawLine
+End Sub
 
 Private Sub Worksheet_Change(ByVal Target As Range)
     On Error GoTo ErrHandler
@@ -50,9 +54,17 @@ Private Sub Worksheet_Change(ByVal Target As Range)
         End If
     End If
 
+    ' 開放
+    Set ws = Nothing
+    Set dataRange = Nothing
+
     Exit Sub
 
 ErrHandler:
     MsgBox "Tasksシートの変更イベント中にエラーが発生しました: " & Err.Description, vbCritical
-End Sub
 
+    ' 開放
+    Set ws = Nothing
+    Set dataRange = Nothing
+
+End Sub
