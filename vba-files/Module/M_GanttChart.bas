@@ -172,6 +172,8 @@ Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Dat
 
         If Format(currentDate, "yyyy/mm") <> yearMonth Then
             wsGantt.Range(wsGantt.Cells(timelineHeaderRow, mergeStartCol), wsGantt.Cells(timelineHeaderRow, currentColumn - 1)).Merge
+            ' årê¸í«â¡
+            wsGantt.Range(wsGantt.Cells(timelineHeaderRow, mergeStartCol), wsGantt.Cells(timelineHeaderRow, currentColumn - 1)).Borders.LineStyle = xlContinuous
             yearMonth = Format(currentDate, "yyyy/mm")
             mergeStartCol = currentColumn
         End If
@@ -180,6 +182,8 @@ Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Dat
         End With
         With wsGantt.Cells(timelineDayRow, currentColumn)
             .Value = Format(currentDate, "d"): .HorizontalAlignment = xlCenter
+            ' årê¸í«â¡
+            .Borders.LineStyle = xlContinuous
         End With
         If Weekday(currentDate) = vbSaturday Or Weekday(currentDate) = vbSunday Then
             wsGantt.Range(wsGantt.Cells(timelineDayRow, currentColumn), wsGantt.Cells(100, currentColumn)).Interior.Color = RGB(242, 242, 242)
@@ -187,6 +191,8 @@ Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Dat
     Next colOffset
     
     wsGantt.Range(wsGantt.Cells(timelineHeaderRow, mergeStartCol), wsGantt.Cells(timelineHeaderRow, currentColumn)).Merge
+    ' årê¸í«â¡
+    wsGantt.Range(wsGantt.Cells(timelineHeaderRow, mergeStartCol), wsGantt.Cells(timelineHeaderRow, currentColumn)).Borders.LineStyle = xlContinuous
 End Sub
 
 Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, wsTasks As Worksheet, lastTaskRow As Long, chartTopRow As Long, chartStartCol As Long)
