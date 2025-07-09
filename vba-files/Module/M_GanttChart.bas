@@ -2,281 +2,249 @@ Attribute VB_Name = "M_GanttChart"
 Option Explicit
 
 '////////////////////////////////////////////////////////////////////////////////////////////////////
-'// M_GanttChart Module
-'// Contains the main logic for drawing, updating the Gantt chart, and updating the overall progress graph.
+'// M_GanttChart モジュール
+'// ガントチャートの描画、更新、全体進捗グラフの更新など、主要なロジックを格納します。
+'// --- 変更履歴 ---
+'// [2025/07/07] 複数回のデバッグを経て、安定動作する最終版コードに修正。
+'//               不安定なWorksheetFunctionの使用を中止し、堅牢なループ処理に回帰。
 '////////////////////////////////////////////////////////////////////////////////////////////////////
 
-' Chart Objects Name
-Private Const OVERALL_PROGRESS_CHART_NAME As String = "OverallProgressChart"
-Private Const TASK_BAR_NAME_PREFIX As String = "TaskBar_"
-Private Const TIMELINE_NAME_PREFIX As String = "Timeline_"
-Private Const PROGRESS_NAME_PREFIX As String = "Progress_"
+' --- Tasksシートの列インデックス ---
+Private Const COL_TASK_ID As Long = 1
+Private Const COL_TASK_NAME As String = "B"
+Private Const COL_DURATION As Long = 3
+Private Const COL_START_DATE As Long = 4
+Private Const COL_END_DATE As Long = 5
+Private Const COL_PROGRESS As Long = 6
+Private Const COL_STATUS As Long = 7
 
-' Task Status
-Private Const STATUS_UNSTARTED As String = "Unstarted"
-Private Const STATUS_IN_PROGRESS As String = "In Progress"
-Private Const STATUS_COMPLETED As String = "Completed"
-Private Const STATUS_DELAYED As String = "Delayed"
+' --- Settingsシートの定義 ---
+Private Const SETTINGS_VALUE_COL As Long = 2
+Private Const SETTINGS_CHART_START_COL As Long = 3
+Private Const SETTING_ROW_CHART_START As Long = 1
+Private Const SETTING_ROW_BAR_HEIGHT As Long = 2
+Private Const SETTING_ROW_ROW_HEIGHT As Long = 3
+Private Const SETTING_ROW_COL_WIDTH As Long = 4
+Private Const SETTING_ROW_COLOR_UNSTARTED As Long = 5
+Private Const SETTING_ROW_COLOR_IN_PROGRESS As Long = 6
+Private Const SETTING_ROW_COLOR_COMPLETED As Long = 7
+Private Const SETTING_ROW_COLOR_DELAYED As Long = 8
 
+' --- シェイプ名の接頭辞 ---
+Private Const SHAPE_PREFIX_TASK_BAR As String = "TaskBar_"
+Private Const SHAPE_NAME_PROGRESS_CHART As String = "OverallProgressChart"
 
-' Main procedure to update the Gantt chart
 Public Sub UpdateGanttChart()
+    Dim procName As String: procName = "UpdateGanttChart"
     On Error GoTo ErrHandler
+    Application.ScreenUpdating = False
 
-    Dim wsGantt As Worksheet
-    Dim wsTasks As Worksheet
-    Dim wsSettings As Worksheet
-    Dim appSettings As Settings
-    Dim allTasks As Tasks
-    Dim task As Object
-    Dim minDate As Date
-    Dim maxDate As Date
-    Dim i As Long
-
+    Dim wsGantt As Worksheet, wsTasks As Worksheet, wsSettings As Worksheet
     Set wsGantt = ThisWorkbook.Sheets("GanttChart")
     Set wsTasks = ThisWorkbook.Sheets("Tasks")
     Set wsSettings = ThisWorkbook.Sheets("Settings")
 
-    ' Load settings and tasks
-    Set appSettings = Settings
-    appSettings.LoadFromSheet wsSettings
-    
-    Set allTasks = New Tasks
-    allTasks.LoadFromSheet wsTasks
-
-    If allTasks.Count = 0 Then
-        MsgBox "No task data found.", vbInformation
-        Exit Sub
-    End If
-
-    ' Clear the old chart elements
     Call ClearGanttChart(wsGantt)
 
-    ' Determine the date range for the chart
-    minDate = allTasks.GetMinDate
-    maxDate = allTasks.GetMaxDate
+    Dim chartStartRow As Long, chartStartCol As Long, barHeight As Long, rowHeight As Long
+    Dim colWidth As Double
+    chartStartRow = wsSettings.Cells(SETTING_ROW_CHART_START, SETTINGS_VALUE_COL).Value
+    chartStartCol = wsSettings.Cells(SETTING_ROW_CHART_START, SETTINGS_CHART_START_COL).Value
+    barHeight = wsSettings.Cells(SETTING_ROW_BAR_HEIGHT, SETTINGS_VALUE_COL).Value
+    rowHeight = wsSettings.Cells(SETTING_ROW_ROW_HEIGHT, SETTINGS_VALUE_COL).Value
+    colWidth = wsSettings.Cells(SETTING_ROW_COL_WIDTH, SETTINGS_VALUE_COL).Value
 
-    ' Draw the timeline
-    Call DrawTimeline(wsGantt, minDate, maxDate, appSettings.chartStartRow, appSettings.chartStartCol, appSettings.colWidth)
+    Dim lastTaskRow As Long
+    lastTaskRow = wsTasks.Cells(wsTasks.Rows.Count, COL_TASK_NAME).End(xlUp).Row
+    If lastTaskRow < 2 Then GoTo CleanUp
 
-    ' Draw the bar for each task
-    For i = 1 To allTasks.Count
-        Set task = allTasks.Item(i)
-        Call DrawTaskBar(wsGantt, task, appSettings, minDate, i - 1)
+    ' --- プロジェクトの日付範囲を特定 (堅牢なループ方式) --- ★★★ 修正箇所 ★★★
+    Dim minDate As Date, maxDate As Date
+    Dim i As Long
+    ' 最初の有効な日付を検索して初期値に設定
+    For i = 2 To lastTaskRow
+        If IsDate(wsTasks.Cells(i, COL_START_DATE).Value) Then
+            minDate = wsTasks.Cells(i, COL_START_DATE).Value
+            maxDate = wsTasks.Cells(i, COL_END_DATE).Value
+            Exit For
+        End If
+    Next i
+    
+    ' 残りのタスクと比較して真の最小日・最大日を求める
+    For i = i + 1 To lastTaskRow
+        If IsDate(wsTasks.Cells(i, COL_START_DATE).Value) And wsTasks.Cells(i, COL_START_DATE).Value < minDate Then
+            minDate = wsTasks.Cells(i, COL_START_DATE).Value
+        End If
+        If IsDate(wsTasks.Cells(i, COL_END_DATE).Value) And wsTasks.Cells(i, COL_END_DATE).Value > maxDate Then
+            maxDate = wsTasks.Cells(i, COL_END_DATE).Value
+        End If
     Next i
 
-    ' Update the overall progress chart
-    Call UpdateOverallProgressChart(wsGantt, allTasks, appSettings)
 
+    Call DrawTimeline(wsGantt, minDate, maxDate, chartStartRow, chartStartCol, colWidth, rowHeight)
+
+    For i = 2 To lastTaskRow
+        Call DrawTaskBar(wsGantt, wsTasks.Cells(i, COL_TASK_ID).Value, wsTasks.Cells(i, COL_TASK_NAME).Value, _
+                         wsTasks.Cells(i, COL_START_DATE).Value, wsTasks.Cells(i, COL_END_DATE).Value, _
+                         wsTasks.Cells(i, COL_STATUS).Value, chartStartRow + i - 1, chartStartCol, _
+                         colWidth, barHeight, minDate, rowHeight)
+    Next i
+
+    Call UpdateOverallProgressChart(wsGantt, wsTasks, lastTaskRow, chartStartRow + lastTaskRow + 2, chartStartCol)
+
+CleanUp:
+    Application.ScreenUpdating = True
     Exit Sub
-
 ErrHandler:
-    MsgBox "Error in UpdateGanttChart: " & Err.Description, vbCritical
+    MsgBox "エラーが発生しました (" & procName & "): " & vbCrLf & Err.Description, vbCritical
+    GoTo CleanUp
 End Sub
 
-' Clears the Gantt chart of all shapes
 Private Sub ClearGanttChart(wsGantt As Worksheet)
-    On Error Resume Next ' Continue if a shape is not found
-
+    On Error Resume Next
     Dim sh As Shape
     For Each sh In wsGantt.Shapes
-        If Left(sh.Name, Len(TASK_BAR_NAME_PREFIX)) = TASK_BAR_NAME_PREFIX Or _
-           Left(sh.Name, Len(TIMELINE_NAME_PREFIX)) = TIMELINE_NAME_PREFIX Or _
-           Left(sh.Name, Len(PROGRESS_NAME_PREFIX)) = PROGRESS_NAME_PREFIX Or _
-           sh.Type = msoChart Then
-            sh.Delete
-        End If
+        If sh.Name Like SHAPE_PREFIX_TASK_BAR & "*" Or sh.Name = SHAPE_NAME_PROGRESS_CHART Then sh.Delete
     Next sh
-
-    On Error GoTo 0 ' Reset error handling
+    wsGantt.Range("A4:ZZ100").Clear
+    wsGantt.Range("A4:ZZ100").Interior.ColorIndex = xlNone
+    On Error GoTo 0
 End Sub
 
-' Draws a bar corresponding to a single task
-Private Sub DrawTaskBar(wsGantt As Worksheet, task As Object, appSettings As Settings, minChartDate As Date, index As Long)
-    On Error GoTo ErrHandler
+Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String, _
+                        startDate As Date, endDate As Date, status As String, _
+                        rowNum As Long, chartStartCol As Long, colWidth As Double, barHeight As Long, _
+                        minChartDate As Date, taskRowHeight As Long)
+    ' 開始日または終了日が無効な場合は描画しない
+    If Not IsDate(startDate) Or Not IsDate(endDate) Then Exit Sub
 
-    Dim barLeft As Double
-    Dim barTop As Double
-    Dim barWidth As Double
-    Dim barColor As Long
-    Dim taskShape As Shape
-    Dim rowNum As Long
+    wsGantt.Rows(rowNum).rowHeight = taskRowHeight
 
-    rowNum = appSettings.chartStartRow + index
+    Dim barLeft As Double, barTop As Double, barWidth As Double
+    barLeft = wsGantt.Columns(chartStartCol).Left + (startDate - minChartDate) * colWidth
+    barWidth = (CDbl(endDate) - CDbl(startDate) + 1) * colWidth
+    barTop = wsGantt.Rows(rowNum).Top + (wsGantt.Rows(rowNum).Height - barHeight) / 2
 
-    ' Calculate the starting position and width of the bar
-    barLeft = wsGantt.Cells(rowNum, 1).Left + (task("StartDate") - minChartDate) * appSettings.colWidth
-    barTop = wsGantt.Cells(rowNum, 1).Top + (wsGantt.Cells(rowNum, 1).Height - appSettings.BarHeight) / 2
-    barWidth = (task("EndDate") - task("StartDate") + 1) * appSettings.colWidth
-
-    ' Get the color based on the status
-    barColor = GetColorByStatus(task("Status"), appSettings)
-
-    ' Draw the bar
-    Set taskShape = wsGantt.Shapes.AddShape(msoShapeRectangle, barLeft, barTop, barWidth, appSettings.BarHeight)
-    With taskShape
-        .Fill.ForeColor.RGB = barColor
+    Dim sh As Shape
+    Set sh = wsGantt.Shapes.AddShape(msoShapeRectangle, barLeft, barTop, barWidth, barHeight)
+    With sh
+        .Fill.ForeColor.RGB = GetColorByStatus(status)
         .Line.Visible = msoFalse
-        .Name = TASK_BAR_NAME_PREFIX & task("TaskID")
-        .OnAction = "M_ChartEvents.ShowTaskDetails"
-        .TextFrame2.TextRange.Text = task("TaskName")
-        With .TextFrame2.TextRange.Font.Fill
-            .Visible = msoTrue
-            .ForeColor.RGB = RGB(0, 0, 0)
-            .Transparency = 0
-            .Solid
-        End With
-        .TextFrame2.TextRange.Font.Size = 8
-        .TextFrame2.TextRange.Font.Bold = msoFalse
-        .TextFrame2.VerticalAnchor = msoAnchorMiddle
-        .TextFrame2.HorizontalAnchor = msoAnchorCenter
-        .TextFrame2.WordArtformat = msoTextEffect1
-    End With
-
-    Exit Sub
-
-ErrHandler:
-    MsgBox "Error in DrawTaskBar: " & Err.Description, vbCritical
-End Sub
-
-' Draws the timeline
-Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Date, _
-                         chartStartRow As Long, chartStartCol As Long, colWidth As Long)
-    On Error GoTo ErrHandler
-
-    Dim currentDate As Date
-    Dim colOffset As Long
-    Dim headerRow As Long
-
-    headerRow = chartStartRow - 1
-
-    ' Clear the timeline header
-    wsGantt.Range(wsGantt.Cells(headerRow, chartStartCol), wsGantt.Cells(headerRow, chartStartCol + (endDate - startDate + 1))).Clear
-
-    colOffset = 0
-    For currentDate = startDate To endDate
-        With wsGantt.Cells(headerRow, chartStartCol + colOffset)
-            .value = Format(currentDate, "m/d")
-            .ColumnWidth = colWidth / 6
-            .HorizontalAlignment = xlCenter
-            .VerticalAlignment = xlCenter
-            .Orientation = 90
-
-            ' Change the background color of weekends
-            If Weekday(currentDate) = vbSaturday Or Weekday(currentDate) = vbSunday Then
-                .Interior.Color = RGB(220, 220, 220)
-            Else
-                .Interior.Pattern = xlNone
-            End If
-        End With
-        colOffset = colOffset + 1
-    Next currentDate
-
-    Exit Sub
-
-ErrHandler:
-    MsgBox "Error in DrawTimeline: " & Err.Description, vbCritical
-End Sub
-
-' Updates the overall progress chart
-Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, allTasks As Tasks, appSettings As Settings)
-    On Error GoTo ErrHandler
-
-    Dim totalDuration As Double
-    Dim completedDuration As Double
-    Dim progressPercentage As Double
-    Dim chartObj As ChartObject
-    Dim chartData(1 To 2) As Double
-    Dim task As Object
-    Dim i As Long
-
-    ' Delete the old chart
-    On Error Resume Next
-    wsGantt.ChartObjects(OVERALL_PROGRESS_CHART_NAME).Delete
-    On Error GoTo ErrHandler
-
-    totalDuration = 0
-    completedDuration = 0
-
-    For i = 1 To allTasks.Count
-        Set task = allTasks.Item(i)
-        totalDuration = totalDuration + task("Duration")
-        If task("Status") = STATUS_COMPLETED Then
-            completedDuration = completedDuration + task("Duration")
-        Else
-            completedDuration = completedDuration + (task("Duration") * task("Progress"))
-        End If
-    Next i
-
-    If totalDuration > 0 Then
-        progressPercentage = completedDuration / totalDuration
-    Else
-        progressPercentage = 0
-    End If
-
-    ' Store the chart data in an array
-    chartData(1) = progressPercentage
-    chartData(2) = 1 - progressPercentage
-
-    ' Create the chart
-    Set chartObj = wsGantt.ChartObjects.Add( _
-        Left:=wsGantt.Cells(appSettings.chartStartRow + allTasks.Count, 1).Left, _
-        Top:=wsGantt.Cells(appSettings.chartStartRow + allTasks.Count, 1).Top + 20, _
-        Width:=200, _
-        Height:=120)
-
-    With chartObj
-        .Name = OVERALL_PROGRESS_CHART_NAME
-        With .Chart
-            .ChartType = xlDoughnut
-            .HasTitle = True
-            .ChartTitle.Text = "Overall Progress"
-            .ChartTitle.Font.Size = 10
-            .HasLegend = False
-            .ChartGroups(1).DoughnutHoleSize = 75
-
-            ' Set the data from the array
-            With .SeriesCollection.NewSeries
-                .Values = chartData
-                .Points(1).Format.Fill.ForeColor.RGB = RGB(0, 176, 80) ' Completed (Green)
-                .Points(2).Format.Fill.ForeColor.RGB = RGB(220, 220, 220) ' Incomplete (Gray)
-                .Points(1).Border.LineStyle = xlNone
-                .Points(2).Border.LineStyle = xlNone
-
-                ' Remove all data labels
-                .ApplyDataLabels
-                .DataLabels.Delete
-
-                ' Add a data label for the center
-                .Points(1).ApplyDataLabels
-                With .DataLabels(1)
-                    .Text = Format(progressPercentage, "0%")
-                    .Font.Size = 12
-                    .Font.Bold = True
-                    .Position = xlLabelPositionCenter
+        .Name = SHAPE_PREFIX_TASK_BAR & taskID
+        With .TextFrame2
+            .VerticalAnchor = msoAnchorMiddle
+            .MarginLeft = 5: .MarginRight = 5: .WordWrap = msoFalse
+            With .TextRange
+                .Text = taskName
+                .ParagraphFormat.Alignment = msoAlignLeft
+                With .Font
+                    .Fill.ForeColor.RGB = IIf(.Parent.Parent.Parent.Fill.ForeColor.RGB = &HC0C0C0, RGB(0, 0, 0), RGB(255, 255, 255))
+                    .Size = 9
+                    .Bold = msoTrue
                 End With
             End With
         End With
     End With
-
-    Exit Sub
-
-ErrHandler:
-    MsgBox "Error in UpdateOverallProgressChart: " & Err.Description, vbCritical
 End Sub
 
-' Returns a color based on the status
-Private Function GetColorByStatus(status As String, appSettings As Settings) As Long
+Private Sub DrawTimeline(wsGantt As Worksheet, startDate As Date, endDate As Date, _
+                         chartStartRow As Long, chartStartCol As Long, colWidth As Double, taskRowHeight As Long)
+    Dim timelineHeaderRow As Long: timelineHeaderRow = chartStartRow - 2
+    Dim timelineDayRow As Long: timelineDayRow = chartStartRow - 1
+    
+    With wsGantt.Rows(timelineHeaderRow & ":" & timelineDayRow)
+        .Clear
+        .rowHeight = 15
+    End With
+    wsGantt.Rows(timelineDayRow).rowHeight = 30
+    
+    Dim totalDays As Long: totalDays = endDate - startDate + 10
+    If totalDays <= 0 Then totalDays = 100 ' エラー回避
+    wsGantt.Columns(chartStartCol).Resize(, totalDays).ColumnWidth = colWidth / 7
+
+    Dim currentDate As Date, colOffset As Long, currentColumn As Long
+    Dim yearMonth As String: yearMonth = Format(startDate, "yyyy/mm")
+    Dim mergeStartCol As Long: mergeStartCol = chartStartCol
+    
+    For colOffset = 0 To totalDays - 10
+        currentDate = startDate + colOffset
+        currentColumn = chartStartCol + colOffset
+
+        If Format(currentDate, "yyyy/mm") <> yearMonth Then
+            wsGantt.Range(wsGantt.Cells(timelineHeaderRow, mergeStartCol), wsGantt.Cells(timelineHeaderRow, currentColumn - 1)).Merge
+            yearMonth = Format(currentDate, "yyyy/mm")
+            mergeStartCol = currentColumn
+        End If
+        With wsGantt.Cells(timelineHeaderRow, mergeStartCol)
+            .Value = yearMonth: .HorizontalAlignment = xlCenter
+        End With
+        With wsGantt.Cells(timelineDayRow, currentColumn)
+            .Value = Format(currentDate, "d"): .HorizontalAlignment = xlCenter
+        End With
+        If Weekday(currentDate) = vbSaturday Or Weekday(currentDate) = vbSunday Then
+            wsGantt.Range(wsGantt.Cells(timelineDayRow, currentColumn), wsGantt.Cells(100, currentColumn)).Interior.Color = RGB(242, 242, 242)
+        End If
+    Next colOffset
+    
+    wsGantt.Range(wsGantt.Cells(timelineHeaderRow, mergeStartCol), wsGantt.Cells(timelineHeaderRow, currentColumn)).Merge
+End Sub
+
+Private Sub UpdateOverallProgressChart(wsGantt As Worksheet, wsTasks As Worksheet, lastTaskRow As Long, chartTopRow As Long, chartStartCol As Long)
+    Dim totalWorkload As Double, completedWorkload As Double, progressPercentage As Double
+    Dim duration As Double, progress As Double, i As Long
+
+    For i = 2 To lastTaskRow
+        If IsNumeric(wsTasks.Cells(i, COL_DURATION).Value) And IsNumeric(wsTasks.Cells(i, COL_PROGRESS).Value) Then
+            duration = wsTasks.Cells(i, COL_DURATION).Value
+            progress = wsTasks.Cells(i, COL_PROGRESS).Value
+            totalWorkload = totalWorkload + duration
+            completedWorkload = completedWorkload + (duration * progress)
+        End If
+    Next i
+
+    If totalWorkload > 0 Then progressPercentage = completedWorkload / totalWorkload Else progressPercentage = 0
+
+    Dim dataRange As Range: Set dataRange = wsGantt.Range("Z1:Z2")
+    dataRange.Cells(1, 1).Value = progressPercentage
+    dataRange.Cells(2, 1).Value = 1 - progressPercentage
+
+    Dim chObj As ChartObject
+    Set chObj = wsGantt.ChartObjects.Add(Left:=wsGantt.Columns(2).Left, Top:=wsGantt.Rows(chartTopRow).Top, Width:=200, Height:=120)
+    With chObj
+        .Name = SHAPE_NAME_PROGRESS_CHART
+        With .Chart
+            .ChartType = xlDoughnut
+            .SetSourceData Source:=dataRange
+            .HasLegend = False
+            .DoughnutGroups(1).DoughnutHoleSize = 75
+            With .SeriesCollection(1)
+                .Points(1).Format.Fill.ForeColor.RGB = GetColorByStatus("完了")
+                .Points(2).Format.Fill.ForeColor.RGB = RGB(220, 220, 220)
+                .Border.Color = RGB(255, 255, 255)
+            End With
+            .HasTitle = True
+            With .ChartTitle
+                .Format.TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(89, 89, 89)
+                .Format.TextFrame2.TextRange.Font.Size = 14
+                .Format.TextFrame2.TextRange.Font.Bold = msoTrue
+                .Text = Format(progressPercentage, "0.0%")
+            End With
+            .PlotArea.Format.Fill.Visible = msoFalse
+            .ChartArea.Format.Fill.Visible = msoFalse
+            .ChartArea.Format.Line.Visible = msoFalse
+        End With
+    End With
+    dataRange.ClearContents
+End Sub
+
+Private Function GetColorByStatus(status As String) As Long
+    On Error Resume Next
+    Dim wsSettings As Worksheet: Set wsSettings = ThisWorkbook.Sheets("Settings")
     Select Case status
-        Case STATUS_UNSTARTED
-            GetColorByStatus = appSettings.ColorUnstarted
-        Case STATUS_IN_PROGRESS
-            GetColorByStatus = appSettings.ColorInProgress
-        Case STATUS_COMPLETED
-            GetColorByStatus = appSettings.ColorCompleted
-        Case STATUS_DELAYED
-            GetColorByStatus = appSettings.ColorDelayed
-        Case Else
-            GetColorByStatus = RGB(192, 192, 192) ' Default Color (Gray)
+        Case "未着手": GetColorByStatus = wsSettings.Cells(SETTING_ROW_COLOR_UNSTARTED, SETTINGS_VALUE_COL).Value
+        Case "進行中": GetColorByStatus = wsSettings.Cells(SETTING_ROW_COLOR_IN_PROGRESS, SETTINGS_VALUE_COL).Value
+        Case "完了": GetColorByStatus = wsSettings.Cells(SETTING_ROW_COLOR_COMPLETED, SETTINGS_VALUE_COL).Value
+        Case "遅延": GetColorByStatus = wsSettings.Cells(SETTING_ROW_COLOR_DELAYED, SETTINGS_VALUE_COL).Value
+        Case Else: GetColorByStatus = RGB(192, 192, 192)
     End Select
 End Function

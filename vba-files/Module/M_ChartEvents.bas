@@ -43,14 +43,14 @@ Public Sub ShowTaskDetails()
 
     ' Tasksシートから該当タスクの情報を検索
     For i = 2 To lastTaskRow
-        If wsTasks.Cells(i, COL_TASK_ID).value = taskID Then
-            msg = "タスクID: " & wsTasks.Cells(i, COL_TASK_ID).value & vbCrLf & _
-                  "タスク名: " & wsTasks.Cells(i, COL_TASK_NAME).value & vbCrLf & _
-                  "期間: " & wsTasks.Cells(i, COL_DURATION).value & "日" & vbCrLf & _
-                  "開始日: " & Format(wsTasks.Cells(i, COL_START_DATE).value, "yyyy/mm/dd") & vbCrLf & _
-                  "終了日: " & Format(wsTasks.Cells(i, COL_END_DATE).value, "yyyy/mm/dd") & vbCrLf & _
-                  "進捗: " & Format(wsTasks.Cells(i, COL_PROGRESS).value, "0%") & vbCrLf & _
-                  "ステータス: " & wsTasks.Cells(i, COL_STATUS).value
+        If wsTasks.Cells(i, COL_TASK_ID).Value = taskID Then
+            msg = "タスクID: " & wsTasks.Cells(i, COL_TASK_ID).Value & vbCrLf & _
+                  "タスク名: " & wsTasks.Cells(i, COL_TASK_NAME).Value & vbCrLf & _
+                  "期間: " & wsTasks.Cells(i, COL_DURATION).Value & "日" & vbCrLf & _
+                  "開始日: " & Format(wsTasks.Cells(i, COL_START_DATE).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "終了日: " & Format(wsTasks.Cells(i, COL_END_DATE).Value, "yyyy/mm/dd") & vbCrLf & _
+                  "進捗: " & Format(wsTasks.Cells(i, COL_PROGRESS).Value, "0%") & vbCrLf & _
+                  "ステータス: " & wsTasks.Cells(i, COL_STATUS).Value
             taskFound = True
             Exit For
         End If
