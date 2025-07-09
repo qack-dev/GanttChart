@@ -23,6 +23,9 @@ Public Sub DrawLine()
     Dim dataRange As Range
     Dim lastRaw As Integer
     Dim dt As Date
+    Dim idRange As Range
+    Dim endRange As Range
+    
     ' 代入
     Set ws = ThisWorkbook.Worksheets("Tasks")
     lastRaw = ws.Cells(ws.Rows.Count, COL_TASK_NAME).End(xlUp).Row
@@ -30,8 +33,28 @@ Public Sub DrawLine()
         ws.Cells(1, COL_TASK_ID), _
         ws.Cells(lastRaw, COL_STATUS) _
     )
+    Set idRange = ws.Range( _
+        ws.Cells(1, COL_TASK_ID), _
+        ws.Cells(ws.Rows.Count, COL_TASK_ID).End(xlUp) _
+    )
+    Set endRange = ws.Range( _
+        ws.Cells(1, COL_END_DATE), _
+        ws.Cells(ws.Rows.Count, COL_END_DATE).End(xlUp) _
+    )
+    
+    ' シート全体の罫線をクリア
     ws.Cells.Borders.LineStyle = xlNone
-    ' 入力をリセット
+    
+    ' id,終了日列をクリア
+    With idRange
+        .ClearContents
+        .Interior.ColorIndex = xlNone
+    End With
+    With endRange
+        .ClearContents
+        .Interior.ColorIndex = xlNone
+    End With
+    
     ' 入力---------------------------------------
     For i = 2 To lastRaw
         ws.Cells(i, COL_TASK_ID).Value = i - 1
@@ -39,8 +62,14 @@ Public Sub DrawLine()
         dt = dt + ws.Cells(i, COL_DURATION).Value - 1
         ws.Cells(i, COL_END_DATE).NumberFormat = "yyyy/mm/dd"
         ws.Cells(i, COL_END_DATE).Value = dt
+        ' 塗り潰し
+        ws.Cells(i, COL_TASK_ID).Interior.Color _
+        = RGB(191, 191, 191)
+        ws.Cells(i, COL_END_DATE).Interior.Color = _
+        RGB(191, 191, 191)
     Next i
     '--------------------------------------------
+    
     ' 見出し行に罫線を引く
     ws.Range(ws.Cells(1, COL_TASK_ID), ws.Cells(1, COL_STATUS)).Borders.LineStyle = xlContinuous
     ' フォーマット整える
@@ -59,6 +88,9 @@ ExitProc:     ' 正常終了、またはエラー処理後のジャンプ先
     ' 開放
     Set ws = Nothing
     Set dataRange = Nothing
+    Set idRange = Nothing
+    Set endRange = Nothing
+    Cells(1, 1).Select
     ' イベントの発生を再度有効にする
     Application.EnableEvents = True
     Exit Sub
