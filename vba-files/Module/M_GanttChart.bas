@@ -131,6 +131,8 @@ Private Sub DrawTaskBar(wsGantt As Worksheet, taskID As Long, taskName As String
         .Fill.ForeColor.RGB = GetColorByStatus(status)
         .Line.Visible = msoFalse
         .Name = SHAPE_PREFIX_TASK_BAR & taskID
+        ' ’Ç‰Á
+        .OnAction = "ShowTaskDetails"
         With .TextFrame2
             .VerticalAnchor = msoAnchorMiddle
             .MarginLeft = 5: .MarginRight = 5: .WordWrap = msoFalse
